@@ -637,6 +637,17 @@
 
 </div>
 
+<div style="text-align: right; margin-top: 20px; margin-right: 20px;">
+    <p style="margin-top: 20px;font-weight: bold;font-size:12px;">Customer Signature</p>
+    @if ($enquiry->sign_image)
+        <div style="display: inline-block; margin-top: 10px;">
+            <img src="{{ public_path('sign_images/' . $enquiry->sign_image) }}" alt="Signature" style="width: 100px; height: 50px;">
+        </div>
+    @endif
+</div>
+
+
+
 </body>
 </html>
 

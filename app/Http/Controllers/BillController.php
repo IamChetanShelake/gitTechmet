@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\File;
 
 class BillController extends Controller
 {
-    
+
 public function generateBill($id)
     {
         // Fetch hall enquiry details
@@ -55,14 +55,15 @@ public function generateBill($id)
             File::makeDirectory($directory, 0755, true, true);
         }
 
-        // Save the PDF
+        // return $pdf->stream('quotation_' . $enquiry->id . '.pdf');
+
         $pdf->save($filePath);
 
-        // ✅ Store only the file name in the database
+
         $enquiry->quotation_file = $fileName;
         $enquiry->save();
 
-        
+
 
 
         session()->flash('pdf_download', $filePath);
@@ -74,7 +75,7 @@ public function generateBill($id)
 
     }
 
-                
+
 
 
     private function sendQuotationMessage($enquiry)

@@ -162,7 +162,7 @@
                             <div class="container card p-4 shadow-sm" style="background-color: #fff5ed; border-radius: 10px;">
                                 <h2 class="text-center mb-4">Hall Enquiry Form</h2>
 
-                                <form name="contactForm" class="form-border" method="POST" action="{{ route('enquiry.store') }}">
+                                <form name="contactForm" class="form-border" method="POST" action="{{ route('enquiry.store') }}" enctype="multipart/form-data">
                                     @csrf
 
                                     <div class="row g-4">
@@ -239,17 +239,7 @@
                                                 @enderror
                                             </div>
 
-                                            {{-- <div class="mb-3" style="background-color: #fff !important;">
-                                                <select name="hall" id="hall" class="form-control" required>
-                                                    <option value="" selected disabled>-- Select Hall --</option>
-                                                    @foreach ($halls as $hall)
-                                                        <option value="{{ $hall->name }}" {{ old('hall') == $hall->id ? 'selected' : '' }}>{{ $hall->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                @error('hall')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div> --}}
+
 
                                             <div class="mb-3" style="background-color: #fff !important;">
                                                 <select name="hall" id="hall" class="form-control" required>
@@ -316,6 +306,17 @@
                                                     <div class="text-danger">{{ $message }}</div>
                                                 @enderror
                                             </div>
+
+                                            <div class="mb-3">
+                                                <label for="sign_image" class="form-label">Sign Image *</label>
+                                                <input type="file" name="sign_image" id="sign_image" class="form-control" accept="image/*" required>
+                                                @error('sign_image')
+                                                    <div class="text-danger">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+
+
+
                                         </div>
 
                                         <!-- Submit Button -->
