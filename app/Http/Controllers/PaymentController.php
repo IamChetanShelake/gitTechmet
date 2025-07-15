@@ -107,97 +107,166 @@ class PaymentController extends Controller
      */
     public function handleResponse(Request $request)
     {
-    try {
-    \Log::info('Payment Gateway Response:', $request->all());
-    $contacts = Contact::all();
-    $pages = Page::all();
+        try {
+            \Log::info('🔄 Payment Gateway Response Received:', $request->all());
+            $contacts = Contact::all();
+            $pages = Page::all();
 
-    $data = $request->all();
-    $merchantTxnNo = $data['merchantTxnNo'] ?? null;
-    $responseCode = $data['responseCode'] ?? null;
-    $payPhiTxnNo = $data['paymentID'] ?? null;
-    $respDescription = $data['respDescription'] ?? null;
+            $data = $request->all();
+            $merchantTxnNo = $data['merchantTxnNo'] ?? null;
+            $responseCode = $data['responseCode'] ?? null;
+            $payPhiTxnNo = $data['paymentID'] ?? null;
+            $respDescription = $data['respDescription'] ?? null;
+            $paymentMode = $data['paymentMode'] ?? null;
+            $amount = $data['amount'] ?? null;
 
-    if (!$merchantTxnNo || !$responseCode) {
-        return view('website.payment-status', [
-            'status' => 'error',
-            'message' => 'Invalid payment gateway response.',
-            'contacts' => $contacts,
-            'pages' => $pages,
-            'gateway_response' => $data
-        ]);
-    }
-
-    $transactionStatus = ($responseCode === '0000') ? 'SUCCESS' : 'FAILED';
-
-    // Find the transaction
-    $transaction = PaymentTransaction::where('merchant_txn_no', $merchantTxnNo)->first();
-
-    if (!$transaction) {
-        \Log::error('Transaction not found for merchant txn no: ' . $merchantTxnNo);
-        return view('website.payment-status', [
-            'status' => 'error',
-            'message' => 'Transaction not found',
-            'contacts' => $contacts,
-            'pages' => $pages,
-            'gateway_response' => $data
-        ]);
-    }
-
-    // Update transaction status
-    $transaction->update([
-        'payphi_txn_no' => $payPhiTxnNo,
-        'status' => $transactionStatus,
-        'response_code' => $responseCode,
-        'full_response' => $data,
-        'payment_date' => now()
-    ]);
-
-    // Update booked hall payment status if payment is successful
-    if ($transactionStatus === 'SUCCESS') {
-        $bookedHall = $transaction->bookedHall;
-        if ($bookedHall) {
-            $bookedHall->update([
-                'paid_amount' => $transaction->amount,
-                'remaining_amount' => max(0, $bookedHall->total_rent - $transaction->amount)
+            \Log::info('📊 Payment Response Details:', [
+                'merchant_txn_no' => $merchantTxnNo,
+                'response_code' => $responseCode,
+                'payment_id' => $payPhiTxnNo,
+                'description' => $respDescription,
+                'payment_mode' => $paymentMode,
+                'amount' => $amount
             ]);
-            // Send WhatsApp notification for successful payment
-            $this->sendPaymentSuccessNotification($bookedHall, $transaction);
-        }
-        return view('website.payment-status', [
-            'status' => 'success',
-            'message' => 'Payment completed successfully!',
-            'transaction' => $transaction,
-            'booking' => $bookedHall,
-            'contacts' => $contacts,
-            'pages' => $pages,
-            'gateway_response' => $data
-        ]);
-    } else {
-        return view('website.payment-status', [
-            'status' => 'failed',
-            'message' => $respDescription ?? 'Payment failed. Please try again.',
-            'transaction' => $transaction,
-            'contacts' => $contacts,
-            'pages' => $pages,
-            'gateway_response' => $data
-        ]);
-    }
 
-} catch (\Exception $e) {
-    \Log::error('Payment response handling failed', [
-        'error' => $e->getMessage(),
-        'request_data' => $request->all()
-    ]);
-    return view('website.payment-status', [
-        'status' => 'error',
-        'message' => 'An error occurred while processing payment response.',
-        'contacts' => $contacts,
-        'pages' => $pages,
-        'gateway_response' => $request->all()
-    ]);
-}
-}
+            if (!$merchantTxnNo || !$responseCode) {
+                \Log::error('❌ Invalid payment gateway response - missing required fields');
+                return view('website.payment-status', [
+                    'status' => 'error',
+                    'message' => 'Invalid payment gateway response.',
+                    'contacts' => $contacts,
+                    'pages' => $pages,
+                    'gateway_response' => $data
+                ]);
+            }
+
+            // Handle different response codes from PhiCommerce
+            $transactionStatus = 'PENDING'; // Default status
+            
+            switch ($responseCode) {
+                case '0000':
+                    $transactionStatus = 'SUCCESS';
+                    \Log::info('✅ Payment Status: SUCCESS (0000)');
+                    break;
+                case 'R1000':
+                    $transactionStatus = 'SUCCESS'; // R1000 means payment processed successfully by PhiCommerce
+                    \Log::info('✅ Payment Status: SUCCESS (R1000) - Request processed successfully by PhiCommerce');
+                    break;
+                case '039':
+                    $transactionStatus = 'FAILED'; // Transaction Rejected
+                    \Log::info('❌ Payment Status: FAILED (039) - Transaction Rejected');
+                    break;
+                case '020':
+                    $transactionStatus = 'FAILED'; // Cancelled by user
+                    \Log::info('❌ Payment Status: FAILED (020) - Cancelled by user');
+                    break;
+                default:
+                    $transactionStatus = 'FAILED';
+                    \Log::info('❌ Payment Status: FAILED (' . $responseCode . ') - Unknown response code');
+                    break;
+            }
+
+            // Find the transaction
+            $transaction = PaymentTransaction::where('merchant_txn_no', $merchantTxnNo)->first();
+
+            if (!$transaction) {
+                \Log::error('❌ Transaction not found for merchant txn no: ' . $merchantTxnNo);
+                return view('website.payment-status', [
+                    'status' => 'error',
+                    'message' => 'Transaction not found',
+                    'contacts' => $contacts,
+                    'pages' => $pages,
+                    'gateway_response' => $data
+                ]);
+            }
+
+            \Log::info('📝 Updating transaction in database:', [
+                'transaction_id' => $transaction->id,
+                'old_status' => $transaction->status,
+                'new_status' => $transactionStatus,
+                'payphi_txn_no' => $payPhiTxnNo
+            ]);
+
+            // Update transaction status
+            $transaction->update([
+                'payphi_txn_no' => $payPhiTxnNo,
+                'status' => $transactionStatus,
+                'response_code' => $responseCode,
+                'full_response' => $data,
+                'payment_date' => now()
+            ]);
+
+            // No need to check status for R1000 since it already means SUCCESS
+            // R1000 = "Request processed successfully" by PhiCommerce
+            \Log::info('🎯 Payment processing completed - Status: ' . $transactionStatus);
+
+            // Update booked hall payment status if payment is successful
+            if ($transactionStatus === 'SUCCESS') {
+                \Log::info('🎉 Processing successful payment...');
+                $bookedHall = $transaction->bookedHall;
+                if ($bookedHall) {
+                    \Log::info('🏢 Updating booked hall payment details:', [
+                        'booking_id' => $bookedHall->id,
+                        'paid_amount' => $transaction->amount,
+                        'total_rent' => $bookedHall->total_rent
+                    ]);
+                    
+                    $bookedHall->update([
+                        'paid_amount' => $transaction->amount,
+                        'remaining_amount' => max(0, $bookedHall->total_rent - $transaction->amount)
+                    ]);
+                    
+                    // Send WhatsApp notification for successful payment
+                    $this->sendPaymentSuccessNotification($bookedHall, $transaction);
+                }
+                
+                return view('website.payment-status', [
+                    'status' => 'success',
+                    'message' => 'Payment completed successfully!',
+                    'transaction' => $transaction,
+                    'booking' => $bookedHall,
+                    'contacts' => $contacts,
+                    'pages' => $pages,
+                    'gateway_response' => $data
+                ]);
+            } elseif ($transactionStatus === 'PENDING') {
+                \Log::info('⏳ Payment is pending - showing pending status to user');
+                return view('website.payment-status', [
+                    'status' => 'pending',
+                    'message' => 'Payment is being processed. Please wait for confirmation. You will receive a notification once the payment is confirmed.',
+                    'transaction' => $transaction,
+                    'contacts' => $contacts,
+                    'pages' => $pages,
+                    'gateway_response' => $data
+                ]);
+            } else {
+                \Log::info('❌ Payment failed - showing failure status to user');
+                return view('website.payment-status', [
+                    'status' => 'failed',
+                    'message' => $respDescription ?? 'Payment failed. Please try again.',
+                    'transaction' => $transaction,
+                    'contacts' => $contacts,
+                    'pages' => $pages,
+                    'gateway_response' => $data
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('💥 Payment response handling failed:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
+            return view('website.payment-status', [
+                'status' => 'error',
+                'message' => 'An error occurred while processing payment response.',
+                'contacts' => $contacts ?? [],
+                'pages' => $pages ?? [],
+                'gateway_response' => $request->all()
+            ]);
+        }
+    }
 
     /**
      * Check payment status
@@ -351,10 +420,87 @@ class PaymentController extends Controller
     private function generateStatusHash($data)
     {
         $secret = config('payphi.secret');
-        $msg = $data['merchantID'] . $data['merchantTxnNo'] . $data['originalTxnNo'] . 
-               $data['transactionType'] . $data['amount'];
         
-        return hash_hmac('sha256', $msg, $secret);
+        // For PhiCommerce status check API, the hash format is:
+        // amount + merchantID + merchantTxnNo + transactionType
+        $msg = $data['amount'] . $data['merchantID'] . $data['merchantTxnNo'] . $data['transactionType'];
+        
+        \Log::info('🔐 Generating secure hash for status check:', [
+            'transaction_type' => $data['transactionType'],
+            'message_string' => $msg,
+            'secret_length' => strlen($secret)
+        ]);
+        
+        $hash = hash_hmac('sha256', $msg, $secret);
+        \Log::info('🔑 Generated hash: ' . $hash);
+        
+        return $hash;
+    }
+
+    /**
+     * Handle webhook notifications from PhiCommerce
+     */
+    public function handleWebhook(Request $request)
+    {
+        try {
+            \Log::info('Payment Webhook Received:', $request->all());
+            
+            $data = $request->all();
+            $merchantTxnNo = $data['merchantTxnNo'] ?? null;
+            $responseCode = $data['responseCode'] ?? null;
+            $paymentStatus = $data['paymentStatus'] ?? null;
+            
+            if (!$merchantTxnNo) {
+                return response()->json(['status' => 'error', 'message' => 'Invalid webhook data'], 400);
+            }
+            
+            // Find the transaction
+            $transaction = PaymentTransaction::where('merchant_txn_no', $merchantTxnNo)->first();
+            
+            if (!$transaction) {
+                \Log::error('Webhook: Transaction not found for merchant txn no: ' . $merchantTxnNo);
+                return response()->json(['status' => 'error', 'message' => 'Transaction not found'], 404);
+            }
+            
+            // Update transaction status based on webhook
+            $finalStatus = 'FAILED';
+            if ($responseCode === '0000' || $paymentStatus === 'SUCCESS') {
+                $finalStatus = 'SUCCESS';
+            } elseif ($responseCode === 'R1000' || $paymentStatus === 'PENDING') {
+                $finalStatus = 'SUCCESS'; // Treat R1000 as SUCCESS in webhook too
+            }
+            
+            $transaction->update([
+                'status' => $finalStatus,
+                'response_code' => $responseCode,
+                'full_response' => array_merge($transaction->full_response ?? [], ['webhook' => $data]),
+                'payment_date' => now()
+            ]);
+            
+            // If payment is successful, update booking and send notification
+            if ($finalStatus === 'SUCCESS') {
+                $bookedHall = $transaction->bookedHall;
+                if ($bookedHall) {
+                    $bookedHall->update([
+                        'paid_amount' => $transaction->amount,
+                        'remaining_amount' => max(0, $bookedHall->total_rent - $transaction->amount)
+                    ]);
+                    
+                    // Send WhatsApp notification for successful payment
+                    $this->sendPaymentSuccessNotification($bookedHall, $transaction);
+                }
+            }
+            
+            return response()->json(['status' => 'success', 'message' => 'Webhook processed successfully']);
+            
+        } catch (\Exception $e) {
+            \Log::error('Webhook processing failed', [
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json(['status' => 'error', 'message' => 'Webhook processing failed'], 500);
+        }
     }
 
     /**

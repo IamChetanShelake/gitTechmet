@@ -329,7 +329,9 @@
 
                                             <div class="mb-3" id="draw-signature" style="display: none;">
                                                 <label class="form-label">Draw Signature</label>
-                                                <canvas id="signature-pad" width="300" height="150" style="border: 1px solid #ccc;"></canvas>
+                                                <div style="border: 1px solid #ced4da; border-radius: 0.25rem; height: 150px; background-color: #fff;">
+                                                    <canvas id="signature-pad" style="width: 100%; height: 100%; touch-action: none;"></canvas>
+                                                </div>
                                                 <input type="hidden" name="digital_signature" id="digital-signature">
                                                 <button type="button" style="background-color: gray; color: white;font-size:14px;" id="clear-signature">Clear Signature</button>
                                             </div>
@@ -360,52 +362,122 @@
         </section>
     </div>
     <script>
-        document.getElementById('signature_type').addEventListener('change', function() {
-        document.getElementById('upload-signature').style.display = 'none';
-        document.getElementById('text-signature').style.display = 'none';
-        document.getElementById('draw-signature').style.display = 'none';
+        document.addEventListener('DOMContentLoaded', function() {
+            const signatureType = document.getElementById('signature_type');
+            const uploadSignature = document.getElementById('upload-signature');
+            const textSignature = document.getElementById('text-signature');
+            const drawSignature = document.getElementById('draw-signature');
+            const canvas = document.getElementById('signature-pad');
+            const ctx = canvas.getContext('2d');
+            const clearButton = document.getElementById('clear-signature');
+            const form = document.querySelector('form');
+            const digitalSignatureInput = document.getElementById('digital-signature');
 
-        if (this.value === 'image') {
-            document.getElementById('upload-signature').style.display = 'block';
-        } else if (this.value === 'text') {
-            document.getElementById('text-signature').style.display = 'block';
-        } else if (this.value === 'draw') {
-            document.getElementById('draw-signature').style.display = 'block';
-        }
-    });
+            let drawing = false;
+            let lastPos = { x: 0, y: 0 };
 
-    // For Digital Signature
-    const canvas = document.getElementById('signature-pad');
-    const ctx = canvas.getContext('2d');
-    let drawing = false;
+            // Set canvas dimensions
+            function resizeCanvas() {
+                const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                canvas.width = canvas.offsetWidth * ratio;
+                canvas.height = canvas.offsetHeight * ratio;
+                ctx.scale(ratio, ratio);
+            }
 
-    canvas.addEventListener('mousedown', () => drawing = true);
-    canvas.addEventListener('mouseup', () => drawing = false);
-    canvas.addEventListener('mouseleave', () => drawing = false);
-    canvas.addEventListener('mousemove', draw);
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
 
-    function draw(event) {
-        if (!drawing) return;
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.strokeStyle = '#000';
-        ctx.lineTo(event.offsetX, event.offsetY);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(event.offsetX, event.offsetY);
-    }
+            // Handle signature type change
+            signatureType.addEventListener('change', function() {
+                uploadSignature.style.display = 'none';
+                textSignature.style.display = 'none';
+                drawSignature.style.display = 'none';
 
-    document.getElementById('clear-signature').addEventListener('click', () => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
+                if (this.value === 'image') {
+                    uploadSignature.style.display = 'block';
+                } else if (this.value === 'text') {
+                    textSignature.style.display = 'block';
+                } else if (this.value === 'draw') {
+                    drawSignature.style.display = 'block';
+                    resizeCanvas(); // Ensure canvas is properly sized
+                }
+            });
 
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const signatureType = document.getElementById('signature_type').value;
-        if (signatureType === 'draw') {
-            document.getElementById('digital-signature').value = canvas.toDataURL();
-        }
-    });
+            // Drawing functions
+            function getEventPosition(event) {
+                const rect = canvas.getBoundingClientRect();
+                let clientX, clientY;
+                if (event.touches && event.touches.length > 0) {
+                    clientX = event.touches[0].clientX;
+                    clientY = event.touches[0].clientY;
+                } else {
+                    clientX = event.clientX;
+                    clientY = event.clientY;
+                }
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            }
 
+            function startDrawing(event) {
+                drawing = true;
+                lastPos = getEventPosition(event);
+                ctx.beginPath();
+                ctx.moveTo(lastPos.x, lastPos.y);
+                // Draw a small dot for single taps
+                ctx.lineTo(lastPos.x + 0.0001, lastPos.y);
+                ctx.stroke();
+                event.preventDefault();
+            }
+
+            function draw(event) {
+                if (!drawing) return;
+                const pos = getEventPosition(event);
+                ctx.beginPath();
+                ctx.moveTo(lastPos.x, lastPos.y);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                lastPos = pos;
+                event.preventDefault();
+            }
+
+            function stopDrawing(event) {
+                drawing = false;
+                event.preventDefault();
+            }
+
+            // Event listeners for drawing
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            canvas.addEventListener('touchstart', startDrawing);
+            canvas.addEventListener('touchmove', draw);
+            canvas.addEventListener('touchend', stopDrawing);
+
+            // Clear signature
+            clearButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                digitalSignatureInput.value = '';
+            });
+
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                if (signatureType.value === 'draw' && !isCanvasEmpty()) {
+                    digitalSignatureInput.value = canvas.toDataURL('image/png');
+                }
+            });
+
+            function isCanvasEmpty() {
+                const pixelBuffer = new Uint32Array(
+                    ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer
+                );
+                return !pixelBuffer.some(pixel => pixel !== 0);
+            }
+        });
     </script>
     <!-- content close -->
 @endsection
