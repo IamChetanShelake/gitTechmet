@@ -71,11 +71,31 @@ class HallEnquiryController extends Controller
 
              // ✅ Correct Image Upload
 
-           if ($request->hasFile('sign_image')) {
-            $imageName = time() . '.' . $request->sign_image->extension();
-            $request->sign_image->move('sign_images', $imageName);
-            $hallenquiry->sign_image = $imageName;
-        }
+           if ($request->hasFile('sign_image'))
+            {
+                $imageName = time() . '.' . $request->sign_image->extension();
+                $request->sign_image->move('sign_images', $imageName);
+                $hallenquiry->sign_image = $imageName;
+            }
+
+
+
+            if ($request->digital_signature)
+            {
+                $digitalSignature = $request->digital_signature;
+                $signatureData = explode(',', $digitalSignature)[1];
+                $signatureDecoded = base64_decode($signatureData);
+                $signatureName = 'digital_' . time() . '.png';
+
+                // ✅ Store in 'public/sign_images' without using public_path
+                file_put_contents('sign_images/' . $signatureName, $signatureDecoded);
+
+                $hallenquiry->sign_image = $signatureName;
+            }
+
+
+
+            $hallenquiry->typed_signature = $request->typed_signature;
 
 
             $hallenquiry->save();
