@@ -46,15 +46,12 @@
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Sr No.</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Customer Name</th>
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Hall Name</th>
-
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">View All Details</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Vendors</th>
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Payment Status</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Remaining Amount</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Total Amount</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-
-                            {{-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Confirm Bokking</th> --}}
-
                         </tr>
                     </thead>
                     <tbody>
@@ -88,7 +85,7 @@
                                     </a>
                                 </td>
 
-
+                                <!-- Vendors -->
                                 <td class="align-middle text-center">
                                     @php
                                         $hasConfirmedService = $eventServices->where('booked_hall_id', $bookedHall->id)->where('status', 'confirmed')->isNotEmpty() ||
@@ -102,83 +99,63 @@
                                         <a href="{{ route('View.EventCatering', $bookedHall->id) }}" class="btn btn-info">
                                             View Event / Catering
                                         </a>
-
                                     @elseif ($hasApprovedService)
-                                    <p>
-                                       <span class="badge bg-success"> Approved by </br> admin</span>
-                                    </p>
+                                        <p>
+                                           <span class="badge bg-success"> Approved by </br> admin</span>
+                                        </p>
                                     @else
-                                    <p>
-                                        <span class="badge bg-secondary">Not Confirm </br> yet</span>
-                                     </p>
+                                        <p>
+                                            <span class="badge bg-secondary">Not Confirm </br> yet</span>
+                                         </p>
                                     @endif
                                 </td>
 
-                                {{-- <td class="align-middle text-center">
-                                    <a href="{{route('Generate.Bill',$hallenquirie->id)}}">
-                                        Generate Bill
-                                    </a>
-                                </td> --}}
-                                {{-- <td class="align-middle text-center">
-                                    <a href="{{ route('Generate.Bill', $hallenquirie->id) }}"
-                                       class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"
-                                       style="background-color: #007bff; border-color: #007bff;">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">request_quote</span>
-                                        <span>Generate Bill</span>
-                                    </a>
-                                </td> --}}
-
-                                {{-- <td class="align-middle text-center">
-                                    @if($hallenquirie->status == 'Viewed')
-                                        <a href="{{ route('Generate.Bill', $bookedHall->id) }}"
-                                           class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"
-                                           style="background-color: #007bff; border-color: #007bff;">
-                                            <span class="material-symbols-outlined" style="font-size: 18px;">request_quote</span>
-                                            <span>Quotation</span>
-                                        </a>
-                                    @endif
-                                </td> --}}
-
-
-
-
-
-
-
-                                <!-- Action (Edit/Delete) -->
-                                {{-- <td class="align-middle text-center">
-                                    <a href="{{ route('admin.hall-enquiry.edit', $hallenquirie->id) }}" class="btn btn-success">
-                                        Edit
-                                    </a>
-                                    <form action="{{ route('admin.hall-enquiry.destroy', $hallenquirie->id) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </td> --}}
-
-                                <!-- Status (You can add dynamic status if required) -->
-                                {{-- <td class="align-middle text-center">
-                                    @if($hallenquirie->status == 'pending')
-                                        <span class="badge bg-warning">Pending</span>
-                                    @elseif($hallenquirie->status == 'Viewed')
-                                        <span class="badge bg-success">Viewed</span>
-                                    @else
-                                        <span class="badge bg-danger">Rejected</span>
-                                    @endif
-                                </td>
-
+                                <!-- Payment Status -->
                                 <td class="align-middle text-center">
-                                    @if($hallenquirie->status == 'Viewed')
-                                        <form action="{{ route('Confirm.Booking', $hallenquirie->id) }}" method="POST">
-                                            @csrf
-                                            <button type="submit" class="btn btn-secondary">Confirm Booking</button>
-                                        </form>
+                                    @if($bookedHall->payment_status == 'SUCCESS')
+                                        <span class="badge bg-success px-3 py-2">
+                                            <i class="fas fa-check-circle me-1"></i>
+                                            Paid
+                                        </span>
+                                        @if($bookedHall->payment_date)
+                                            <br><small class="text-muted">{{ $bookedHall->payment_date->format('d M Y') }}</small>
+                                        @endif
+                                    @elseif($bookedHall->payment_status == 'FAILED')
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Failed
+                                        </span>
+                                    @elseif($bookedHall->payment_status == 'PENDING' || $bookedHall->payment_status == 'initiated')
+                                        <span class="badge bg-warning px-3 py-2">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Pending
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary px-3 py-2">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Not Initiated
+                                        </span>
                                     @endif
-                                </td> --}}
+                                </td>
 
+                                <!-- Remaining Amount -->
+                                <td class="align-middle text-center">
+                                    <div class="d-flex px-2 py-1 justify-content-center">
+                                        <h6 class="mb-0 text-sm">₹{{ number_format($bookedHall->remaining_amount ?? 0, 2) }}</h6>
+                                    </div>
+                                </td>
+
+                                <!-- Total Amount -->
+                                <td class="align-middle text-center">
+                                    <div class="d-flex px-2 py-1 justify-content-center">
+                                        <h6 class="mb-0 text-sm">₹{{ number_format($bookedHall->total_rent ?? 0, 2) }}</h6>
+                                    </div>
+                                </td>
+
+                                <!-- Status -->
+                                <td class="align-middle text-center">
+                                    <span class="badge bg-info px-3 py-2">Active</span>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>

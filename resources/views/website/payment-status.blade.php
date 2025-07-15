@@ -79,21 +79,72 @@
                                     <p class="lead">{{ $message }}</p>
                                 @endif
 
-                                <div class="mt-4">
+                                <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
                                     @if($status === 'success')
-                                        <a href="{{ route('Index.Page') }}" class="btn btn-success btn-lg me-3">
-                                            <i class="fas fa-home"></i> Go to Home
+                                        <a href="{{ route('Index.Page') }}" style="
+                                            display: inline-block;
+                                            padding: 12px 24px;
+                                            font-size: 1.1rem;
+                                            font-weight: 600;
+                                            color: white;
+                                            background: linear-gradient(135deg, #28a745, #20c997);
+                                            border: none;
+                                            border-radius: 50rem;
+                                            text-decoration: none;
+                                            box-shadow: 0 1rem 3rem rgba(0,0,0,0.175);
+                                            transition: all 0.3s ease;
+                                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'; this.style.background='linear-gradient(135deg, #218838, #1ea085)';" 
+                                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1rem 3rem rgba(0,0,0,0.175)'; this.style.background='linear-gradient(135deg, #28a745, #20c997)';">
+                                            <i class="fas fa-home" style="margin-right: 0.5rem;"></i> Go to Home
                                         </a>
-                                        <button onclick="window.print()" class="btn btn-outline-success btn-lg">
-                                            <i class="fas fa-print"></i> Print Receipt
+                                        <button onclick="window.print()" style="
+                                            padding: 12px 24px;
+                                            font-size: 1.1rem;
+                                            font-weight: 600;
+                                            color: white;
+                                            background: linear-gradient(135deg, #6c757d, #5a6268);
+                                            border: none;
+                                            border-radius: 50rem;
+                                            box-shadow: 0 1rem 3rem rgba(0,0,0,0.175);
+                                            transition: all 0.3s ease;
+                                            cursor: pointer;
+                                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'; this.style.background='linear-gradient(135deg, #5a6268, #495057)';" 
+                                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1rem 3rem rgba(0,0,0,0.175)'; this.style.background='linear-gradient(135deg, #6c757d, #5a6268)';">
+                                            <i class="fas fa-print" style="margin-right: 0.5rem;"></i> Print Receipt
                                         </button>
                                     @else
-                                        <a href="{{ route('Index.Page') }}" style="background-color: green; color: white;font-size:14px;">
-                                            <i class="fas fa-home"></i> Go to Home
+                                        <a href="{{ route('Index.Page') }}" style="
+                                            display: inline-block;
+                                            padding: 12px 24px;
+                                            font-size: 1.1rem;
+                                            font-weight: 600;
+                                            color: white;
+                                            background: linear-gradient(135deg, #28a745, #20c997);
+                                            border: none;
+                                            border-radius: 50rem;
+                                            text-decoration: none;
+                                            box-shadow: 0 1rem 3rem rgba(0,0,0,0.175);
+                                            transition: all 0.3s ease;
+                                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'; this.style.background='linear-gradient(135deg, #218838, #1ea085)';" 
+                                           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1rem 3rem rgba(0,0,0,0.175)'; this.style.background='linear-gradient(135deg, #28a745, #20c997)';">
+                                            <i class="fas fa-home" style="margin-right: 0.5rem;"></i> Go to Home
                                         </a>
                                         @if(isset($transaction) && $transaction->booked_hall_id)
-                                            <a href="{{ route('payment.initiate', $transaction->booked_hall_id) }}" style="background-color: gray; color: white;font-size:14px;">
-                                                <i class="fas fa-redo"></i> Try Again
+                                            <a href="{{ route('payment.initiate', $transaction->booked_hall_id) }}" style="
+                                                display: inline-block;
+                                                padding: 12px 24px;
+                                                font-size: 1.1rem;
+                                                font-weight: 600;
+                                                color: #212529;
+                                                background: linear-gradient(135deg, #ffc107, #fd7e14);
+                                                border: none;
+                                                border-radius: 50rem;
+                                                text-decoration: none;
+                                                box-shadow: 0 1rem 3rem rgba(0,0,0,0.175);
+                                                transition: all 0.3s ease;
+                                            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'; this.style.background='linear-gradient(135deg, #e0a800, #e8590c)';" 
+                                               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1rem 3rem rgba(0,0,0,0.175)'; this.style.background='linear-gradient(135deg, #ffc107, #fd7e14)';">
+                                                <i class="fas fa-redo" style="margin-right: 0.5rem;"></i> Try Again
                                             </a>
                                         @endif
                                     @endif
