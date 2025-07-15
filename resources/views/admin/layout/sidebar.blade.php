@@ -234,6 +234,13 @@
             </li>
 
             <li class="nav-item">
+                <a class="nav-link {{ Request::is('admin/payment-transactions*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('admin.payment-transactions.index')}}">
+                    <i class="material-symbols-rounded opacity-5">payments</i>
+                    <span class="nav-link-text ms-1">Payment Transactions</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
                 <a id="toggleMenu2" class="nav-link text-dark" style="font-size: 16px; cursor: pointer; user-select: none;">
                     <i class="material-symbols-rounded opacity-5">article</i>
                     <span class="nav-link-text ms-1">Vendors</span>
