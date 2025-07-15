@@ -26,24 +26,80 @@
     <link href="{{ asset('admin/assets/summernotes/summernote-lite.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
 
-
-
-
-
     <!-- Include jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 
 <!-- Summernote Lite (No Bootstrap needed) -->
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
+<style>
+    /* Hide Scrollbar in Sidebar */
+    #sidenav-main {
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+
+    #sidenav-main::-webkit-scrollbar {
+        width: 0px; /* Chrome, Safari, Edge */
+        background: transparent;
+    }
+
+    #sidenav-main::-webkit-scrollbar-thumb {
+        background: transparent;
+    }
+
+    /* Hide scrollbar for sidebar content */
+    #sidenav-collapse-main {
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+
+    #sidenav-collapse-main::-webkit-scrollbar {
+        width: 0px; /* Chrome, Safari, Edge */
+        background: transparent;
+    }
+
+    #sidenav-collapse-main::-webkit-scrollbar-thumb {
+        background: transparent;
+    }
+
+    /* Hide scrollbar for navbar-nav */
+    .navbar-nav {
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+
+    .navbar-nav::-webkit-scrollbar {
+        width: 0px; /* Chrome, Safari, Edge */
+        background: transparent;
+    }
+
+    .navbar-nav::-webkit-scrollbar-thumb {
+        background: transparent;
+    }
+
+    /* Hide scrollbar for the entire sidebar */
+    .sidenav {
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* Internet Explorer 10+ */
+    }
+
+    .sidenav::-webkit-scrollbar {
+        width: 0px; /* Chrome, Safari, Edge */
+        background: transparent;
+    }
+
+    .sidenav::-webkit-scrollbar-thumb {
+        background: transparent;
+    }
+</style>
+
 </head>
-
-
-
-
-
 
 <body class="g-sidenav-show  bg-gray-100">
 
@@ -64,10 +120,17 @@
     <hr class="horizontal dark mt-0 mb-2">
     <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main" >
         <ul class="navbar-nav" style="margin-bottom: 30px !important;">
-            <li class="nav-item">
+            <!-- <li class="nav-item">
                 <a class="nav-link {{ Request::is('home') ? 'active bg-gradient-dark text-white' : 'text-dark' }} " style="font-size: 16px;"   href="{{ url('/home') }}">
                     <i class="material-symbols-rounded opacity-5">dashboard</i>
                     <span class="nav-link-text ms-1">Dashboard</span>
+                </a>
+            </li> -->
+
+            <li class="nav-item">
+                <a class="nav-link {{ Request::is('admin/payment-transactions*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('admin.payment-transactions.index')}}">
+                    <i class="material-symbols-rounded opacity-5">payments</i>
+                    <span class="nav-link-text ms-1">Payment Transactions</span>
                 </a>
             </li>
 
@@ -84,7 +147,7 @@
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('landing') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('Landing.Table')}}">
-                    <i class="material-symbols-rounded opacity-5">info</i>
+                    <i class="material-symbols-rounded opacity-5">home</i>
                     <span class="nav-link-text ms-1">Landing Page</span>
                 </a>
             </li>
@@ -98,7 +161,7 @@
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('facilitie') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('Facilitie.Table')}}">
-                    <i class="material-symbols-rounded opacity-5">info</i>
+                    <i class="material-symbols-rounded opacity-5">apartment</i>
                     <span class="nav-link-text ms-1">Facilities</span>
                 </a>
             </li>
@@ -133,7 +196,7 @@
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('image') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('Image.Table')}}">
-                    <i class="material-symbols-rounded opacity-5">groups</i>
+                    <i class="material-symbols-rounded opacity-5">photo_library</i>
                     <span class="nav-link-text ms-1">Gallery</span>
                 </a>
             </li>
@@ -153,7 +216,7 @@
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('adminhalls') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('halls.index')}}">
-                    <i class="material-symbols-rounded opacity-5">auto_awesome</i>
+                    <i class="material-symbols-rounded opacity-5">meeting_room</i>
                     <span class="nav-link-text ms-1">Halls</span>
                 </a>
             </li>
@@ -161,7 +224,7 @@
 
             <li class="nav-item">
                 <a id="toggleMenu" class="nav-link text-dark" style="font-size: 16px; cursor: pointer; user-select: none;">
-                    <i class="material-symbols-rounded opacity-5">article</i>
+                    <i class="material-symbols-rounded opacity-5">star</i>
                     <span class="nav-link-text ms-1">Key Features /</br> Ideal For</span>
                 </a>
 
@@ -186,14 +249,14 @@
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('page') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('Page.Table')}}">
-                    <i class="material-symbols-rounded opacity-5">support_agent</i>
+                    <i class="material-symbols-rounded opacity-5">description</i>
                     <span class="nav-link-text ms-1">Pages</span>
                 </a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('hallPage') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('HallPage.Table')}}">
-                    <i class="material-symbols-rounded opacity-5">support_agent</i>
+                    <i class="material-symbols-rounded opacity-5">article</i>
                     <span class="nav-link-text ms-1">Hall Page</span>
                 </a>
             </li>
@@ -206,7 +269,7 @@
             </li> --}}
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('admincontacts') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('Contact.AdminPage')}}">
-                    <i class="material-symbols-rounded opacity-5">table_view</i>
+                    <i class="material-symbols-rounded opacity-5">contact_mail</i>
                     <span class="nav-link-text ms-1">Contacts</span>
                 </a>
             </li>
@@ -214,35 +277,30 @@
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('donation') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('Donation.Table')}}">
-                    <i class="material-symbols-rounded opacity-5">table_view</i>
+                    <i class="material-symbols-rounded opacity-5">volunteer_activism</i>
                     <span class="nav-link-text ms-1">Donations</span>
                 </a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('booked-halls') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('Booked.Halls')}}">
-                    <i class="material-symbols-rounded opacity-5">table_view</i>
+                    <i class="material-symbols-rounded opacity-5">event_available</i>
                     <span class="nav-link-text ms-1">Booked Halls</span>
                 </a>
             </li>
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('AdminHallEnquiry') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('AdminHallEnquiry')}}">
-                    <i class="material-symbols-rounded opacity-5">table_view</i>
+                    <i class="material-symbols-rounded opacity-5">help</i>
                     <span class="nav-link-text ms-1">Hall Enquirys</span>
                 </a>
             </li>
 
-            <li class="nav-item">
-                <a class="nav-link {{ Request::is('admin/payment-transactions*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('admin.payment-transactions.index')}}">
-                    <i class="material-symbols-rounded opacity-5">payments</i>
-                    <span class="nav-link-text ms-1">Payment Transactions</span>
-                </a>
-            </li>
+            
 
             <li class="nav-item">
                 <a id="toggleMenu2" class="nav-link text-dark" style="font-size: 16px; cursor: pointer; user-select: none;">
-                    <i class="material-symbols-rounded opacity-5">article</i>
+                    <i class="material-symbols-rounded opacity-5">business</i>
                     <span class="nav-link-text ms-1">Vendors</span>
                 </a>
 
