@@ -18,6 +18,7 @@ use App\Models\BookedHall;
 use App\Models\Hall_Image;
 use App\Models\HallEnquiry;
 use App\Models\OurFacilite;
+use App\Models\PaymentTransaction;
 use Illuminate\Http\Request;
 
 class WebsiteController extends Controller
@@ -110,19 +111,79 @@ class WebsiteController extends Controller
         $pages = Page::get();
 
         // Fetch the booked hall along with its hall enquiry
-        $booking = BookedHall::with(['enquiry'])->where('booking_code', $pin)->first();
+        $booking = BookedHall::with(['enquiry', 'paymentTransactions'])->where('booking_code', $pin)->first();
 
         if ($booking && $booking->enquiry) {
             // Find the hall based on the `hall_name` in `booked_halls`
             $hall = Hall::where('name', $booking->hall_name)->first(); // Fetch the hall details
 
+            // Get successful payment transactions
+            $successfulPayments = PaymentTransaction::where('booked_hall_id', $booking->id)
+                ->where('status', 'SUCCESS')
+                ->get();
+
+            // Calculate payment status
+            $paymentStatus = $this->calculatePaymentStatus($booking, $successfulPayments);
+
             // Calculate total amount for payment
             $totalAmount = $this->calculateTotalAmount($booking);
 
-            return view('website.book-now', compact('contacts', 'pages', 'booking', 'hall', 'totalAmount'));
+            return view('website.book-now', compact('contacts', 'pages', 'booking', 'hall', 'totalAmount', 'paymentStatus', 'successfulPayments'));
         } else {
             return back()->with('error', 'Invalid PIN, please contact the admin.');
         }
+    }
+
+    /**
+     * Calculate payment status for a booking
+     */
+    private function calculatePaymentStatus($booking, $successfulPayments)
+    {
+        $rentAmount = $booking->total_rent ?? 0;
+        $depositAmount = $booking->total_deposit ?? 0;
+        $rentWithGst = $rentAmount * 1.18;
+        
+        $status = [
+            'deposit_paid' => false,
+            'rent_paid' => false,
+            'full_paid' => false,
+            'deposit_amount' => $depositAmount,
+            'rent_amount' => $rentAmount,
+            'rent_with_gst' => $rentWithGst,
+            'total_amount' => $depositAmount + $rentWithGst,
+            'paid_transactions' => [],
+            'remaining_deposit' => $depositAmount,
+            'remaining_rent' => $rentWithGst,
+        ];
+
+        foreach ($successfulPayments as $payment) {
+            $status['paid_transactions'][] = [
+                'type' => $payment->transaction_type,
+                'amount' => $payment->amount,
+                'date' => $payment->payment_date,
+                'transaction_id' => $payment->merchant_txn_no
+            ];
+
+            switch ($payment->transaction_type) {
+                case 'deposit':
+                    $status['deposit_paid'] = true;
+                    $status['remaining_deposit'] = max(0, $status['remaining_deposit'] - $payment->amount);
+                    break;
+                case 'rent':
+                    $status['rent_paid'] = true;
+                    $status['remaining_rent'] = max(0, $status['remaining_rent'] - $payment->amount);
+                    break;
+                case 'full':
+                    $status['deposit_paid'] = true;
+                    $status['rent_paid'] = true;
+                    $status['full_paid'] = true;
+                    $status['remaining_deposit'] = 0;
+                    $status['remaining_rent'] = 0;
+                    break;
+            }
+        }
+
+        return $status;
     }
 
     /**
