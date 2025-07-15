@@ -31,6 +31,7 @@ use App\Http\Controllers\CateringItemController;
 use App\Http\Controllers\EventCateringController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\WhatsAppTestController;
+use App\Http\Controllers\Admin\PaymentTransactionController;
 
 
 /*
@@ -505,6 +506,15 @@ Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotat
     Route::get('/DeleteDonation/{id}',[DonationController::class,'delete'])->name('Delete.Donation');
 
     Route::get('/viewDonation/{id}',[DonationController::class,'view'])->name('View.Donation');
+
+    // Admin Payment Transaction Routes
+    Route::prefix('admin/payment-transactions')->name('admin.payment-transactions.')->group(function () {
+        Route::get('/', [PaymentTransactionController::class, 'index'])->name('index');
+        Route::get('/{id}', [PaymentTransactionController::class, 'show'])->name('show');
+        Route::get('/export/csv', [PaymentTransactionController::class, 'export'])->name('export');
+        Route::get('/analytics/dashboard', [PaymentTransactionController::class, 'analytics'])->name('analytics');
+        Route::post('/{id}/refund', [PaymentTransactionController::class, 'refund'])->name('refund');
+    });
 
     //Catering Routes
 

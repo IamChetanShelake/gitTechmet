@@ -39,6 +39,17 @@
                                                 <div class="col-md-6">
                                                     <p><strong>Transaction ID:</strong> {{ $transaction->merchant_txn_no }}</p>
                                                     <p><strong>Amount Paid:</strong> ₹{{ number_format($transaction->amount, 2) }}</p>
+                                                    <p><strong>Payment Type:</strong> 
+                                                        @if($transaction->transaction_type == 'deposit')
+                                                            <span class="badge bg-info">Deposit Payment</span>
+                                                        @elseif($transaction->transaction_type == 'rent')
+                                                            <span class="badge bg-warning">Rent Payment</span>
+                                                        @elseif($transaction->transaction_type == 'full')
+                                                            <span class="badge bg-success">Full Payment</span>
+                                                        @else
+                                                            <span class="badge bg-secondary">{{ ucfirst($transaction->transaction_type ?? 'N/A') }}</span>
+                                                        @endif
+                                                    </p>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <p><strong>Payment Date:</strong> {{ $transaction->payment_date ? $transaction->payment_date->format('d M Y, h:i A') : 'N/A' }}</p>

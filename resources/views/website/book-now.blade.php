@@ -81,12 +81,81 @@
 
                 <div class="text-center mt-4">
                     @if($booking && ($booking->remaining_amount === null || $booking->remaining_amount > 0))
-                        <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="text-white px-5 py-2" style="background-color: #AB8965; border-radius: 8px; transition: 0.3s; border: none; cursor: pointer;">
-                                Pay Now - ₹{{ number_format($totalAmount ?? 0, 2) }}
-                            </button>
-                        </form>
+                        @php
+                            $rentAmount = $booking->total_rent ?? 0;
+                            $depositAmount = $booking->total_deposit ?? 0;
+                            $rentWithGst = $rentAmount * 1.18; // Add 18% GST to rent
+                            $depositPlusRentWithGst = $depositAmount + $rentWithGst; // No GST on deposit, GST only on rent
+                        @endphp
+                        
+                        <div class="row justify-content-center">
+                            <div class="col-md-10">
+                                <h4 class="mb-4 text-center">Choose Payment Option</h4>
+                                
+                                <!-- Payment Option 1: Deposit Only -->
+                                <div class="payment-option mb-3 p-3 border rounded" style="background-color: #f8f9fa;">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h5 class="mb-1">Pay Deposit Amount</h5>
+                                            <p class="mb-0 text-muted">Security deposit (No GST applicable)</p>
+                                            <strong class="text-primary">₹{{ number_format($depositAmount, 2) }}</strong>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="payment_type" value="deposit">
+                                                <button type="submit" class="btn text-white px-4 py-2" style="background-color: #28a745; border-radius: 8px; transition: 0.3s; border: none;">
+                                                    Pay Deposit
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Payment Option 2: Rent Only -->
+                                <div class="payment-option mb-3 p-3 border rounded" style="background-color: #f8f9fa;">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h5 class="mb-1">Pay Rent Amount</h5>
+                                            <p class="mb-0 text-muted">Hall rent + 18% GST</p>
+                                            <small class="text-muted">Rent: ₹{{ number_format($rentAmount, 2) }} + GST: ₹{{ number_format($rentAmount * 0.18, 2) }}</small><br>
+                                            <strong class="text-primary">₹{{ number_format($rentWithGst, 2) }}</strong>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="payment_type" value="rent">
+                                                <button type="submit" class="btn text-white px-4 py-2" style="background-color: #007bff; border-radius: 8px; transition: 0.3s; border: none;">
+                                                    Pay Rent
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Payment Option 3: Deposit + Rent -->
+                                <div class="payment-option mb-3 p-3 border rounded" style="background-color: #fff3cd;">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h5 class="mb-1">Pay Deposit + Rent</h5>
+                                            <p class="mb-0 text-muted">Complete payment (Deposit + Rent + GST on rent only)</p>
+                                            <small class="text-muted">Deposit: ₹{{ number_format($depositAmount, 2) }} + Rent: ₹{{ number_format($rentAmount, 2) }} + GST: ₹{{ number_format($rentAmount * 0.18, 2) }}</small><br>
+                                            <strong class="text-success">₹{{ number_format($depositPlusRentWithGst, 2) }}</strong>
+                                            <span class="badge bg-success ms-2">Recommended</span>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
+                                                @csrf
+                                                <input type="hidden" name="payment_type" value="full">
+                                                <button type="submit" class="btn text-white px-4 py-2" style="background-color: #AB8965; border-radius: 8px; transition: 0.3s; border: none;">
+                                                    Pay Full Amount
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     @else
                         <div class="alert alert-success">
                             <i class="fas fa-check-circle"></i> Payment Completed Successfully!

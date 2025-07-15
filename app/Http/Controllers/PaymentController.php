@@ -22,8 +22,11 @@ class PaymentController extends Controller
             // Find the booked hall
             $bookedHall = BookedHall::with('enquiry')->findOrFail($bookingId);
             
-            // Calculate total amount (you can modify this logic as needed)
-            $totalAmount = $this->calculateTotalAmount($bookedHall);
+            // Get payment type from request
+            $paymentType = $request->input('payment_type', 'full'); // default to full payment
+            
+            // Calculate amount based on payment type
+            $totalAmount = $this->calculateAmountByType($bookedHall, $paymentType);
             
             // Generate unique transaction number
             $txnNo = 'GD' . now()->format('YmdHis') . rand(100, 999);
@@ -42,7 +45,7 @@ class PaymentController extends Controller
                 "txnDate" => $txnDate,
                 "returnURL" => config('payphi.return_url'),
                 "addlParam1" => "BookingID_" . $bookingId,
-                "addlParam2" => "Gurudakshina_Payment"
+                "addlParam2" => "Gurudakshina_Payment_" . ucfirst($paymentType)
             ];
             
             // Generate secure hash
@@ -55,13 +58,15 @@ class PaymentController extends Controller
                 'amount' => $totalAmount,
                 'customer_email' => $bookedHall->customer_email,
                 'customer_mobile' => $bookedHall->customer_phone,
+                'transaction_type' => $paymentType, // Store payment type
                 'status' => 'initiated'
             ]);
             
             Log::info('Payment initiated for booking ID: ' . $bookingId, [
                 'transaction_id' => $transaction->id,
                 'merchant_txn_no' => $txnNo,
-                'amount' => $totalAmount
+                'amount' => $totalAmount,
+                'payment_type' => $paymentType
             ]);
             
             // Send request to PhiCommerce
@@ -378,26 +383,36 @@ class PaymentController extends Controller
     }
 
     /**
-     * Calculate total amount for booking
+     * Calculate amount based on payment type
+     */
+    private function calculateAmountByType($bookedHall, $paymentType)
+    {
+        $rentAmount = $bookedHall->total_rent ?? 0;
+        $depositAmount = $bookedHall->total_deposit ?? 0;
+        
+        switch ($paymentType) {
+            case 'deposit':
+                // Deposit only - no GST on deposit
+                return $depositAmount;
+                
+            case 'rent':
+                // Rent + GST (18% on rent only)
+                return $rentAmount * 1.18;
+                
+            case 'full':
+            default:
+                // Deposit + Rent + GST (GST only on rent, not on deposit)
+                $rentWithGst = $rentAmount * 1.18;
+                return $depositAmount + $rentWithGst;
+        }
+    }
+
+    /**
+     * Calculate total amount for booking (legacy method for backward compatibility)
      */
     private function calculateTotalAmount($bookedHall)
     {
-        $hallRent = $bookedHall->total_rent ?? 0;
-        
-        // Get accessories if any
-        $accessoriesAmount = 0;
-        if ($bookedHall->enquiry && $bookedHall->enquiry->accessorie) {
-            $accessoryIds = json_decode($bookedHall->enquiry->accessorie, true);
-            if (is_array($accessoryIds)) {
-                $accessories = \App\Models\Accessorie::whereIn('id', $accessoryIds)->get();
-                $accessoriesAmount = $accessories->sum('price');
-            }
-        }
-        
-        $subtotal = $hallRent + $accessoriesAmount;
-        $gst = $subtotal * 0.18; // 18% GST
-        
-        return $subtotal + $gst;
+        return $this->calculateAmountByType($bookedHall, 'full');
     }
 
     /**
