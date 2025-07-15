@@ -163,10 +163,10 @@ class HallController extends Controller
 
     //     return redirect('/adminhalls')->with('success', 'Hall has been updated');
     // }
-    
-    
-    
-    
+
+
+
+
     // public function update(Request $request, $id)
     // {
     //     // $request->validate([
@@ -226,8 +226,8 @@ class HallController extends Controller
 
     //     return redirect('/adminhalls')->with('success', 'Hall has been updated');
     // }
-    
-    
+
+
     public function update(Request $request, $id)
     {
         // $request->validate([

@@ -162,7 +162,7 @@
                             <div class="container card p-4 shadow-sm" style="background-color: #fff5ed; border-radius: 10px;">
                                 <h2 class="text-center mb-4">Hall Enquiry Form</h2>
 
-                                <form name="contactForm" class="form-border" method="POST" action="{{ route('enquiry.store') }}">
+                                <form name="contactForm" class="form-border" method="POST" action="{{ route('enquiry.store') }}" enctype="multipart/form-data">
                                     @csrf
 
                                     <div class="row g-4">
@@ -239,17 +239,7 @@
                                                 @enderror
                                             </div>
 
-                                            {{-- <div class="mb-3" style="background-color: #fff !important;">
-                                                <select name="hall" id="hall" class="form-control" required>
-                                                    <option value="" selected disabled>-- Select Hall --</option>
-                                                    @foreach ($halls as $hall)
-                                                        <option value="{{ $hall->name }}" {{ old('hall') == $hall->id ? 'selected' : '' }}>{{ $hall->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                @error('hall')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div> --}}
+
 
                                             <div class="mb-3" style="background-color: #fff !important;">
                                                 <select name="hall" id="hall" class="form-control" required>
@@ -316,6 +306,37 @@
                                                     <div class="text-danger">{{ $message }}</div>
                                                 @enderror
                                             </div>
+
+                                            <div class="mb-3">
+                                                <label for="signature_type" class="form-label">Select Signature Type *</label>
+                                                <select name="signature_type" id="signature_type" class="form-select" required>
+                                                    <option value="">-- Select --</option>
+                                                    <option value="image">Upload Signature Image</option>
+                                                    <option value="text">Type Signature (Name)</option>
+                                                    <option value="draw">Draw Digital Signature</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3" id="upload-signature" style="display: none;">
+                                                <label for="sign_image" class="form-label">Upload Signature Image *</label>
+                                                <input type="file" name="sign_image" id="sign_image" class="form-control" accept="image/*">
+                                            </div>
+
+                                            <div class="mb-3" id="text-signature" style="display: none;">
+                                                <label for="typed_signature" class="form-label">Type Signature (Your Name)</label>
+                                                <input type="text" name="typed_signature" id="typed_signature" class="form-control">
+                                            </div>
+
+                                            <div class="mb-3" id="draw-signature" style="display: none;">
+                                                <label class="form-label">Draw Signature</label>
+                                                <canvas id="signature-pad" width="300" height="150" style="border: 1px solid #ccc;"></canvas>
+                                                <input type="hidden" name="digital_signature" id="digital-signature">
+                                                <button type="button" style="background-color: gray; color: white;font-size:14px;" id="clear-signature">Clear Signature</button>
+                                            </div>
+
+
+
+
                                         </div>
 
                                         <!-- Submit Button -->
@@ -338,5 +359,53 @@
             </div>
         </section>
     </div>
+    <script>
+        document.getElementById('signature_type').addEventListener('change', function() {
+        document.getElementById('upload-signature').style.display = 'none';
+        document.getElementById('text-signature').style.display = 'none';
+        document.getElementById('draw-signature').style.display = 'none';
+
+        if (this.value === 'image') {
+            document.getElementById('upload-signature').style.display = 'block';
+        } else if (this.value === 'text') {
+            document.getElementById('text-signature').style.display = 'block';
+        } else if (this.value === 'draw') {
+            document.getElementById('draw-signature').style.display = 'block';
+        }
+    });
+
+    // For Digital Signature
+    const canvas = document.getElementById('signature-pad');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+
+    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mouseleave', () => drawing = false);
+    canvas.addEventListener('mousemove', draw);
+
+    function draw(event) {
+        if (!drawing) return;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+        ctx.lineTo(event.offsetX, event.offsetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(event.offsetX, event.offsetY);
+    }
+
+    document.getElementById('clear-signature').addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const signatureType = document.getElementById('signature_type').value;
+        if (signatureType === 'draw') {
+            document.getElementById('digital-signature').value = canvas.toDataURL();
+        }
+    });
+
+    </script>
     <!-- content close -->
 @endsection

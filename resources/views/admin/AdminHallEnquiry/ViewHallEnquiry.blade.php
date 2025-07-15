@@ -46,8 +46,20 @@
                                         <span class="badge bg-danger">Rejected</span>
                                     @endif
                                 </p>
+
+
                             </div>
                         </div>
+                    </div>
+                    <div>
+                         <p class="fw-bold mb-2 text-uppercase">Sign Image</p>
+                                    @if ($hallenquirie->sign_image)
+                                        <div class="border rounded p-3">
+                                            <img src="{{ asset('sign_images/' . $hallenquirie->sign_image) }}" alt="Sign Image" style="max-width: 200px;">
+                                        </div>
+                                    @else
+                                        <p>No sign image uploaded.</p>
+                                    @endif
                     </div>
                     <hr>
 

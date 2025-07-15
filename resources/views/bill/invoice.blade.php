@@ -637,6 +637,27 @@
 
 </div>
 
+<div style="text-align: right; margin-top: 20px; margin-right: 20px;">
+    <p style="margin-top: 20px;font-weight: bold;font-size:12px;">Customer Signature</p>
+    @if ($enquiry->sign_image)
+        <div style="display: inline-block; margin-top: 10px;">
+            <img src="{{ public_path('sign_images/' . $enquiry->sign_image) }}" alt="Signature" style="width: 100px; height: 50px;">
+        </div>
+
+    @elseif ($enquiry->signature_type === 'text' && $enquiry->typed_signature)
+        <div style="display: inline-block; margin-top: 10px;">
+            <p style="font-family: cursive; font-size: 18px; font-weight: bold;">
+                {{ $enquiry->typed_signature }}
+            </p>
+        </div>
+    @else
+        <p style="font-style: italic; font-size: 12px;">No signature provided.</p>
+    @endif
+
+</div>
+
+
+
 </body>
 </html>
 

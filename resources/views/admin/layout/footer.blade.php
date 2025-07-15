@@ -295,7 +295,7 @@ new Chart(ctx2, {
             });
         </script>
 
-<script>
+{{-- <script>
     $(document).ready(function() {
         $('#summernote').summernote({
             height: 300, // Editor height
@@ -309,6 +309,47 @@ new Chart(ctx2, {
             ]
         });
     });
+</script> --}}
+
+<script>
+  $(document).ready(function () {
+    // Hamburger menu toggle
+    $('#iconNavbarSidenav').on('click', function () {
+      $('#sidenav-main').toggleClass('g-sidenav-show g-sidenav-pinned');
+      $('body').toggleClass('g-sidenav-show');
+    });
+
+    // Close button in sidebar header
+    $('#sidebarCloseBtn').on('click', function () {
+      $('#sidenav-main').removeClass('g-sidenav-show g-sidenav-pinned');
+      $('body').removeClass('g-sidenav-show');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    $(document).on('click', function (e) {
+      if (
+        !$(e.target).closest('#sidenav-main').length &&
+        !$(e.target).closest('#iconNavbarSidenav').length &&
+        $('#sidenav-main').hasClass('g-sidenav-pinned')
+      ) {
+        $('#sidenav-main').removeClass('g-sidenav-pinned');
+        $('body').removeClass('g-sidenav-show');
+      }
+    });
+
+    // Initialize Summernote
+    $('#summernote').summernote({
+      height: 300,
+      placeholder: 'Enter your content...',
+      toolbar: [
+        ['style', ['bold', 'italic', 'underline', 'clear']],
+        ['font', ['fontname', 'fontsize', 'color']],
+        ['para', ['ul', 'ol', 'paragraph']],
+        ['insert', ['picture', 'link', 'video', 'table']],
+        ['view', ['fullscreen', 'codeview']],
+      ],
+    });
+  });
 </script>
 </body>
 

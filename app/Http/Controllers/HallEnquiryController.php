@@ -31,6 +31,8 @@ class HallEnquiryController extends Controller
             'expected_audience' => 'required|integer|min:1|max:10000',
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
+            'sign_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Image validation
+
         ]);
 
             $isBooked = BookedHall::where('hall_name', $request->hall)
@@ -67,6 +69,35 @@ class HallEnquiryController extends Controller
             $hallenquiry->start_time = $request->start_time;
             $hallenquiry->end_time = $request->end_time;
 
+             // ✅ Correct Image Upload
+
+           if ($request->hasFile('sign_image'))
+            {
+                $imageName = time() . '.' . $request->sign_image->extension();
+                $request->sign_image->move('sign_images', $imageName);
+                $hallenquiry->sign_image = $imageName;
+            }
+
+
+
+            if ($request->digital_signature)
+            {
+                $digitalSignature = $request->digital_signature;
+                $signatureData = explode(',', $digitalSignature)[1];
+                $signatureDecoded = base64_decode($signatureData);
+                $signatureName = 'digital_' . time() . '.png';
+
+                // ✅ Store in 'public/sign_images' without using public_path
+                file_put_contents('sign_images/' . $signatureName, $signatureDecoded);
+
+                $hallenquiry->sign_image = $signatureName;
+            }
+
+
+
+            $hallenquiry->typed_signature = $request->typed_signature;
+
+
             $hallenquiry->save();
 
 
@@ -74,13 +105,13 @@ class HallEnquiryController extends Controller
 
             $adminEmail = "kshatriyashivam34@gmail.com"; // Change this to your admin email
 
-           
+
             $this->sendWhatsappMessage($hallenquiry);
             $this->sendWhatsappMessageForAdmin($hallenquiry);
         return redirect()->back()->with('success', 'Enquiry submitted successfully! A confirmation email has been sent.');
     }
 
-  
+
 
     private function sendWhatsappMessage($hallenquiry)
         {
@@ -154,17 +185,17 @@ class HallEnquiryController extends Controller
         {
             $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
             $token = trim(config('oneclick.api_token'));
-        
+
             // 🧠 Fetch admin from the users table
             $admin = \App\Models\User::where('role', 'admin')->first();
-        
+
             if (!$admin || !$admin->mobile) {
                 Log::error("❌ Admin not found or mobile number is missing.");
                 return;
             }
-        
+
             $adminPhone = "+91" . $admin->mobile;
-        
+
             // ⚙️ Construct payload as per your template2
             $payloadArray = [
                 "to" => $adminPhone,
@@ -188,9 +219,9 @@ class HallEnquiryController extends Controller
                     ]
                 ]
             ];
-        
+
             $payload = json_encode($payloadArray);
-        
+
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $apiUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -200,12 +231,12 @@ class HallEnquiryController extends Controller
                 "Authorization: Bearer " . $token,
                 "Content-Type: application/json"
             ]);
-        
+
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
             curl_close($ch);
-        
+
             // 🧾 Log for debugging
             Log::info("📤 WhatsApp Admin Message Sent", [
                 "URL" => $apiUrl,
@@ -214,14 +245,14 @@ class HallEnquiryController extends Controller
                 "Response" => $response,
                 "cURL Error" => $curlError,
             ]);
-        
+
             if ($httpCode == 200) {
                 Log::info("✅ Admin WhatsApp message sent to {$adminPhone}.");
             } else {
                 Log::error("❌ Admin WhatsApp message failed. HTTP {$httpCode} - {$response}");
             }
         }
-        
+
     public function index()
     {
         $hallenquiries = HallEnquiry::whereIn('status', ['Viewed', 'pending'])->get();
