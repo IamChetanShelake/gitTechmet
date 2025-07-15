@@ -1,6 +1,82 @@
 @extends('website.layout.master')
 
 @section('content')
+<style>
+/* Custom Button Styles */
+.custom-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    font-family: inherit;
+}
+
+.custom-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.custom-btn:active {
+    transform: translateY(0);
+}
+
+.custom-btn-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.custom-btn-success:hover {
+    background-color: #218838;
+}
+
+.custom-btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.custom-btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.custom-btn-warning {
+    background-color: #AB8965;
+    color: white;
+}
+
+.custom-btn-warning:hover {
+    background-color: #8b6f52;
+}
+
+.custom-btn-disabled {
+    background-color: #6c757d;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.custom-btn-disabled:hover {
+    transform: none;
+    box-shadow: none;
+    background-color: #6c757d;
+}
+
+.custom-btn-large {
+    padding: 16px 32px;
+    font-size: 18px;
+}
+
+.custom-btn-small {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+</style>
     <!-- content begin -->
     <div class="no-bottom no-top" id="content">
         <div id="top"></div>
@@ -143,7 +219,7 @@
                                             Pay Remaining Amount
                                         @endif
                                     </h4>
-                                    
+
                                     <!-- Payment Option 1: Deposit Only -->
                                     <div class="payment-option mb-3 p-3 border rounded {{ $paymentStatus['deposit_paid'] ? 'bg-light border-success' : 'bg-white' }}">
                                         <div class="row align-items-center">
@@ -166,12 +242,12 @@
                                                     <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
                                                         @csrf
                                                         <input type="hidden" name="payment_type" value="deposit">
-                                                        <button type="submit" class="btn text-white px-4 py-2" style="background-color: #28a745; border-radius: 8px; transition: 0.3s; border: none;">
+                                                        <button type="submit" class="custom-btn custom-btn-success">
                                                             Pay Deposit
                                                         </button>
                                                     </form>
                                                 @else
-                                                    <button class="btn btn-success px-4 py-2" disabled style="border-radius: 8px;">
+                                                    <button class="custom-btn custom-btn-disabled" disabled>
                                                         <i class="fas fa-check"></i> Paid
                                                     </button>
                                                 @endif
@@ -202,12 +278,12 @@
                                                     <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
                                                         @csrf
                                                         <input type="hidden" name="payment_type" value="rent">
-                                                        <button type="submit" class="btn text-white px-4 py-2" style="background-color: #007bff; border-radius: 8px; transition: 0.3s; border: none;">
+                                                        <button type="submit" class="custom-btn custom-btn-primary">
                                                             Pay Rent
                                                         </button>
                                                     </form>
                                                 @else
-                                                    <button class="btn btn-success px-4 py-2" disabled style="border-radius: 8px;">
+                                                    <button class="custom-btn custom-btn-disabled" disabled>
                                                         <i class="fas fa-check"></i> Paid
                                                     </button>
                                                 @endif
@@ -220,7 +296,7 @@
                                         $partialPaymentMade = $paymentStatus['deposit_paid'] || $paymentStatus['rent_paid'];
                                         $remainingFullAmount = $paymentStatus['remaining_deposit'] + $paymentStatus['remaining_rent'];
                                     @endphp
-                                    
+
                                     <div class="payment-option mb-3 p-3 border rounded {{ $partialPaymentMade ? 'bg-light border-secondary' : 'bg-warning bg-opacity-10' }}">
                                         <div class="row align-items-center">
                                             <div class="col-md-8">
@@ -249,7 +325,7 @@
                                             </div>
                                             <div class="col-md-4 text-end">
                                                 @if($allPaymentsCompleted)
-                                                    <button class="btn btn-success px-4 py-2" disabled style="border-radius: 8px;">
+                                                    <button class="custom-btn custom-btn-disabled" disabled>
                                                         <i class="fas fa-check"></i> Completed
                                                     </button>
                                                 @elseif($partialPaymentMade)
@@ -257,12 +333,12 @@
                                                         <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
                                                             @csrf
                                                             <input type="hidden" name="payment_type" value="remaining">
-                                                            <button type="submit" class="btn text-white px-4 py-2" style="background-color: #AB8965; border-radius: 8px; transition: 0.3s; border: none;">
+                                                            <button type="submit" class="custom-btn custom-btn-warning">
                                                                 Pay Remaining
                                                             </button>
                                                         </form>
                                                     @else
-                                                        <button class="btn btn-success px-4 py-2" disabled style="border-radius: 8px;">
+                                                        <button class="custom-btn custom-btn-disabled" disabled>
                                                             <i class="fas fa-check"></i> Completed
                                                         </button>
                                                     @endif
@@ -270,7 +346,7 @@
                                                     <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
                                                         @csrf
                                                         <input type="hidden" name="payment_type" value="full">
-                                                        <button type="submit" class="btn text-white px-4 py-2" style="background-color: #AB8965; border-radius: 8px; transition: 0.3s; border: none;">
+                                                        <button type="submit" class="custom-btn custom-btn-warning">
                                                             Pay Full Amount
                                                         </button>
                                                     </form>
@@ -290,11 +366,11 @@
                                 $rentWithGst = $rentAmount * 1.18;
                                 $depositPlusRentWithGst = $depositAmount + $rentWithGst;
                             @endphp
-                            
+
                             <div class="row justify-content-center">
                                 <div class="col-md-10">
                                     <h4 class="mb-4 text-center">Choose Payment Option</h4>
-                                    
+
                                     <!-- Payment Option 1: Deposit Only -->
                                     <div class="payment-option mb-3 p-3 border rounded" style="background-color: #f8f9fa;">
                                         <div class="row align-items-center">
@@ -307,7 +383,7 @@
                                                 <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
                                                     @csrf
                                                     <input type="hidden" name="payment_type" value="deposit">
-                                                    <button type="submit" class="btn text-white px-4 py-2" style="background-color: #28a745; border-radius: 8px; transition: 0.3s; border: none;">
+                                                    <button type="submit" class="custom-btn custom-btn-success">
                                                         Pay Deposit
                                                     </button>
                                                 </form>
@@ -328,7 +404,7 @@
                                                 <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
                                                     @csrf
                                                     <input type="hidden" name="payment_type" value="rent">
-                                                    <button type="submit" class="btn text-white px-4 py-2" style="background-color: #007bff; border-radius: 8px; transition: 0.3s; border: none;">
+                                                    <button type="submit" class="custom-btn custom-btn-primary">
                                                         Pay Rent
                                                     </button>
                                                 </form>
@@ -350,7 +426,7 @@
                                                 <form method="POST" action="{{ route('payment.initiate', $booking->id) }}" style="display: inline;">
                                                     @csrf
                                                     <input type="hidden" name="payment_type" value="full">
-                                                    <button type="submit" class="btn text-white px-4 py-2" style="background-color: #AB8965; border-radius: 8px; transition: 0.3s; border: none;">
+                                                    <button type="submit" class="custom-btn custom-btn-warning">
                                                         Pay Full Amount
                                                     </button>
                                                 </form>
