@@ -9,14 +9,33 @@ use App\Models\Cateringitem;
 use App\Models\EventService;
 use Illuminate\Http\Request;
 use App\Models\CateringService;
+use App\Models\PaymentTransaction;
 
 class HallBokkingController extends Controller
 {
     public function index(){
-        // Fetch all booked halls
-        $bookedHalls = BookedHall::all();
+        // Fetch all booked halls with payment transaction data
+        $bookedHalls = BookedHall::with('paymentTransactions')->get();
         $eventServices = EventService::all();
         $cateringServices = CateringService::all();
+        
+        // Add payment status to each booked hall
+        foreach ($bookedHalls as $bookedHall) {
+            $latestTransaction = $bookedHall->paymentTransactions()
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if ($latestTransaction) {
+                $bookedHall->payment_status = $latestTransaction->status;
+                $bookedHall->payment_amount = $latestTransaction->amount;
+                $bookedHall->payment_date = $latestTransaction->payment_date;
+            } else {
+                $bookedHall->payment_status = 'Not Initiated';
+                $bookedHall->payment_amount = 0;
+                $bookedHall->payment_date = null;
+            }
+        }
+        
         return view('admin.BookedHall.bookedHall', compact('bookedHalls','eventServices','cateringServices'));
     }
 
