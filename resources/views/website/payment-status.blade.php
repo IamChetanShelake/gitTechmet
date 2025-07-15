@@ -88,11 +88,11 @@
                                             <i class="fas fa-print"></i> Print Receipt
                                         </button>
                                     @else
-                                        <a href="{{ route('Index.Page') }}" class="btn btn-primary btn-lg me-3">
+                                        <a href="{{ route('Index.Page') }}" style="background-color: green; color: white;font-size:14px;">
                                             <i class="fas fa-home"></i> Go to Home
                                         </a>
                                         @if(isset($transaction) && $transaction->booked_hall_id)
-                                            <a href="{{ route('payment.initiate', $transaction->booked_hall_id) }}" class="btn btn-warning btn-lg">
+                                            <a href="{{ route('payment.initiate', $transaction->booked_hall_id) }}" style="background-color: gray; color: white;font-size:14px;">
                                                 <i class="fas fa-redo"></i> Try Again
                                             </a>
                                         @endif
