@@ -1,6 +1,13 @@
 @extends('website.layout.master')
 
 @section('content')
+<style>
+    #signature-pad {
+    touch-action: none;
+    width: 100%;   /* For responsive width */
+    height: 200px; /* Slightly taller for mobile fingers */
+}
+</style>
     <!-- content begin -->
     <div class="no-bottom no-top" id="content">
 
