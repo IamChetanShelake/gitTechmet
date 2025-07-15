@@ -399,6 +399,22 @@ class PaymentController extends Controller
                 // Rent + GST (18% on rent only)
                 return $rentAmount * 1.18;
                 
+            case 'remaining':
+                // Calculate remaining amount based on successful payments
+                $successfulPayments = PaymentTransaction::where('booked_hall_id', $bookedHall->id)
+                    ->where('status', 'SUCCESS')
+                    ->get();
+                
+                $rentWithGst = $rentAmount * 1.18;
+                $totalAmount = $depositAmount + $rentWithGst;
+                $paidAmount = 0;
+                
+                foreach ($successfulPayments as $payment) {
+                    $paidAmount += $payment->amount;
+                }
+                
+                return max(0, $totalAmount - $paidAmount);
+                
             case 'full':
             default:
                 // Deposit + Rent + GST (GST only on rent, not on deposit)
