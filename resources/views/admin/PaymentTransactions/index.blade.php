@@ -11,7 +11,7 @@
                     </div>
                 </div>
                 <div class="card-body px-0 pb-2">
-                    
+
                     <!-- Statistics Cards -->
                     <div class="row mb-4 px-3">
                         <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
@@ -194,7 +194,7 @@
                                         @php
                                             $typeColors = [
                                                 'deposit' => 'info',
-                                                'rent' => 'warning', 
+                                                'rent' => 'warning',
                                                 'full' => 'success',
                                                 'REFUND' => 'danger'
                                             ];

@@ -52,7 +52,7 @@ class PaymentTransactionController extends Controller
             });
         }
 
-        $transactions = $query->paginate(20);
+        $transactions = $query->simplePaginate(20);
 
         // Get summary statistics
         $stats = $this->getPaymentStats();
@@ -66,7 +66,7 @@ class PaymentTransactionController extends Controller
     public function show($id)
     {
         $transaction = PaymentTransaction::with(['bookedHall.enquiry'])->findOrFail($id);
-        
+
         return view('admin.PaymentTransactions.show', compact('transaction'));
     }
 
@@ -123,7 +123,7 @@ class PaymentTransactionController extends Controller
 
         $callback = function() use ($transactions) {
             $file = fopen('php://output', 'w');
-            
+
             // CSV headers
             fputcsv($file, [
                 'Transaction ID',
@@ -218,7 +218,7 @@ class PaymentTransactionController extends Controller
         try {
             // Create refund transaction record
             $refundRef = 'REF' . now()->format('YmdHis') . rand(100, 999);
-            
+
             PaymentTransaction::create([
                 'booked_hall_id' => $transaction->booked_hall_id,
                 'merchant_txn_no' => $refundRef,
