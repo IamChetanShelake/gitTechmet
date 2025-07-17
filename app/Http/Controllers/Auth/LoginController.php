@@ -47,7 +47,7 @@ class LoginController extends Controller
         // }
 
         if ($user->role === 'admin') {
-            return redirect('/admin-dashboard');
+            return redirect('/admin/payment-transactions');
         } elseif ($user->role === 'event') {
             return redirect('/event-panel');
         } elseif ($user->role === 'catering') {
