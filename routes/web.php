@@ -104,7 +104,7 @@ Route::middleware(['role:event'])->group(function () {
 
      Route::get('/item',[EventItemController::class,'index'])->name('Item.Table');
 
-     Route::view('/item/ViewAdd','Event.EventItemCrud.AddItem')->name('View.AddItem');
+    //  Route::view('/item/ViewAdd','Event.EventItemCrud.AddItem')->name('View.AddItem');
 
      Route::post('/item/Additem',[EventItemController::class,'add'])->name('Add.Item');
 

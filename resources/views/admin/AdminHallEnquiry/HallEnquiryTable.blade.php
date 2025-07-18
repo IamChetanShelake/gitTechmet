@@ -29,16 +29,120 @@
                 setTimeout(function() {
                     $("#successMessage, #failMessage").fadeOut('slow');
                 }, 3000); // Hide messages after 3 seconds
+
+                // Filter functionality
+                function filterTable() {
+                    var hallFilter = $('#hallFilter').val().toLowerCase();
+                    var customerSearch = $('#customerSearch').val().toLowerCase();
+                    var statusFilter = $('#statusFilter').val().toLowerCase();
+
+                    $('tbody tr').each(function() {
+                        var row = $(this);
+                        var customerName = row.find('td:nth-child(2) h6').text().toLowerCase();
+                        var hallName = row.find('td:nth-child(3) h6').text().toLowerCase();
+                        var status = '';
+                        
+                        // Get status from badge
+                        var statusBadge = row.find('td:nth-child(6) .badge');
+                        if (statusBadge.hasClass('bg-warning')) {
+                            status = 'pending';
+                        } else if (statusBadge.hasClass('bg-success')) {
+                            status = 'viewed';
+                        } else if (statusBadge.hasClass('bg-danger')) {
+                            status = 'rejected';
+                        }
+
+                        var showRow = true;
+
+                        // Apply hall filter
+                        if (hallFilter && hallName.indexOf(hallFilter) === -1) {
+                            showRow = false;
+                        }
+
+                        // Apply customer search
+                        if (customerSearch && customerName.indexOf(customerSearch) === -1) {
+                            showRow = false;
+                        }
+
+                        // Apply status filter
+                        if (statusFilter && status !== statusFilter) {
+                            showRow = false;
+                        }
+
+                        if (showRow) {
+                            row.show();
+                        } else {
+                            row.hide();
+                        }
+                    });
+
+                    // Update serial numbers for visible rows
+                    updateSerialNumbers();
+                }
+
+                function updateSerialNumbers() {
+                    var visibleIndex = 1;
+                    $('tbody tr:visible').each(function() {
+                        $(this).find('td:first-child h6').text(visibleIndex);
+                        visibleIndex++;
+                    });
+                }
+
+                // Event listeners for filters
+                $('#hallFilter, #statusFilter').on('change', filterTable);
+                $('#customerSearch').on('keyup', filterTable);
+
+                // Clear filters functionality
+                $('#clearFilters').on('click', function() {
+                    $('#hallFilter').val('');
+                    $('#customerSearch').val('');
+                    $('#statusFilter').val('');
+                    $('tbody tr').show();
+                    updateSerialNumbers();
+                });
             });
         </script>
 
+        <!-- Filter Section -->
+        <div class="card-body px-3 pt-3 pb-0">
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="hallFilter" class="form-label text-sm font-weight-bold">Filter by Hall Name</label>
+                    <select id="hallFilter" class="form-select">
+                        <option value="">All Halls</option>
+                        @foreach($hallenquiries->unique('hall') as $enquiry)
+                            <option value="{{ $enquiry->hall }}">{{ $enquiry->hall }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="customerSearch" class="form-label text-sm font-weight-bold">Search by Customer Name</label>
+                    <input type="text" id="customerSearch" class="form-control" placeholder="Enter customer name...">
+                </div>
+                <div class="col-md-4">
+                    <label for="statusFilter" class="form-label text-sm font-weight-bold">Filter by Status</label>
+                    <select id="statusFilter" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="Viewed">Viewed</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-12">
+                    <button id="clearFilters" class="btn btn-outline-secondary btn-sm">Clear All Filters</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Add Button -->
-        <div class="d-flex justify-content-end p-3">
+        <div class="d-flex justify-content-end px-3">
             {{-- <a class="btn btn-outline-primary btn-lg px-4 py-2" href="{{ route('admin.hall-enquiry.create') }}">Add</a> --}}
         </div>
 
         <!-- Table Section -->
-        <div class="card-body px-0 pb-2">
+        <div class="card-body px-0 pb-2 pt-0">
             <div class="table-responsive p-0">
                 <table class="table align-items-center mb-0">
                     <thead>

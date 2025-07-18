@@ -6,60 +6,64 @@
             <div class="card shadow-lg border-0">
                 <!-- Card Header -->
                 <div class="card-header bg-gradient-dark text-white text-center py-3">
-                    <h4 class="mb-0" style="color: #fff">Hall Enquiry Details</h4>
+                    <h4 class="mb-0" style="color: #fff;display:inline">Hall Enquiry Details</h4>
+                    <button style="float: right;" onclick="printDiv('printableArea')">Print</button>
                 </div>
+
 
                 <!-- Card Body -->
                 <div class="card-body px-5 py-4">
-                    <div class="row g-4">
-                        <!-- Left Column -->
-                        <div class="col-md-6">
-                            <p class="fw-bold mb-2 text-uppercase">Personal Details</p>
-                            <div class="border rounded p-3">
-                                <p><strong>Name:</strong> {{ $hallenquirie->name }}</p>
-                                <p><strong>Organization:</strong> {{ $hallenquirie->organization }}</p>
-                                <p><strong>GST No:</strong> {{ $hallenquirie->gst_no ?? 'Not Provided' }}</p>
-                                <p><strong>Email:</strong> <a
-                                        href="mailto:{{ $hallenquirie->email }}">{{ $hallenquirie->email }}</a></p>
-                                <p><strong>Contact No:</strong> <a
-                                        href="tel:{{ $hallenquirie->contact_no }}">{{ $hallenquirie->contact_no }}</a></p>
-                                <p><strong>Address:</strong> {{ $hallenquirie->address ?? 'Not Provided' }}</p>
+                    <div id="printableArea">
+                        <div class="row g-4">
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <p class="fw-bold mb-2 text-uppercase">Personal Details</p>
+                                <div class="border rounded p-3">
+                                    <p><strong>Name:</strong> {{ $hallenquirie->name }}</p>
+                                    <p><strong>Organization:</strong> {{ $hallenquirie->organization }}</p>
+                                    <p><strong>GST No:</strong> {{ $hallenquirie->gst_no ?? 'Not Provided' }}</p>
+                                    <p><strong>Email:</strong> <a
+                                            href="mailto:{{ $hallenquirie->email }}">{{ $hallenquirie->email }}</a></p>
+                                    <p><strong>Contact No:</strong> <a
+                                            href="tel:{{ $hallenquirie->contact_no }}">{{ $hallenquirie->contact_no }}</a></p>
+                                    <p><strong>Address:</strong> {{ $hallenquirie->address ?? 'Not Provided' }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <p class="fw-bold mb-2 text-uppercase">Event Details</p>
+                                <div class="border rounded p-3">
+                                    <p><strong>Referred By:</strong> {{ $hallenquirie->referred_by ?? 'Not Provided' }}</p>
+                                    <p><strong>Event Type:</strong> {{ $hallenquirie->event_type }}</p>
+                                    <p><strong>Event Date:</strong> {{ $hallenquirie->event_date }}</p>
+                                    <p><strong>Hall:</strong> {{ $hallenquirie->hall }}</p>
+                                    <p><strong>Duration:</strong> {{ $hallenquirie->duration }}</p>
+                                    <p><strong>Expected Audience:</strong> {{ $hallenquirie->expected_audience }}</p>
+                                    <p><strong>Status:</strong>
+                                        @if ($hallenquirie->status == 'pending')
+                                            <span class="badge bg-warning">Pending</span>
+                                        @elseif($hallenquirie->status == 'Viewed')
+                                            <span class="badge bg-success">Viewed</span>
+                                        @else
+                                            <span class="badge bg-danger">Rejected</span>
+                                        @endif
+                                    </p>
+
+
+                                </div>
                             </div>
                         </div>
-
-                        <!-- Right Column -->
-                        <div class="col-md-6">
-                            <p class="fw-bold mb-2 text-uppercase">Event Details</p>
-                            <div class="border rounded p-3">
-                                <p><strong>Referred By:</strong> {{ $hallenquirie->referred_by ?? 'Not Provided' }}</p>
-                                <p><strong>Event Type:</strong> {{ $hallenquirie->event_type }}</p>
-                                <p><strong>Event Date:</strong> {{ $hallenquirie->event_date }}</p>
-                                <p><strong>Hall:</strong> {{ $hallenquirie->hall }}</p>
-                                <p><strong>Duration:</strong> {{ $hallenquirie->duration }}</p>
-                                <p><strong>Expected Audience:</strong> {{ $hallenquirie->expected_audience }}</p>
-                                <p><strong>Status:</strong>
-                                    @if ($hallenquirie->status == 'pending')
-                                        <span class="badge bg-warning">Pending</span>
-                                    @elseif($hallenquirie->status == 'Viewed')
-                                        <span class="badge bg-success">Viewed</span>
-                                    @else
-                                        <span class="badge bg-danger">Rejected</span>
-                                    @endif
-                                </p>
-
-
-                            </div>
+                        <div>
+                            <p class="fw-bold mb-2 text-uppercase">Sign Image</p>
+                                        @if ($hallenquirie->sign_image)
+                                            <div class="border rounded p-3">
+                                                <img src="{{ asset('sign_images/' . $hallenquirie->sign_image) }}" alt="Sign Image" style="max-width: 200px;">
+                                            </div>
+                                        @else
+                                            <p>No sign image uploaded.</p>
+                                        @endif
                         </div>
-                    </div>
-                    <div>
-                         <p class="fw-bold mb-2 text-uppercase">Sign Image</p>
-                                    @if ($hallenquirie->sign_image)
-                                        <div class="border rounded p-3">
-                                            <img src="{{ asset('sign_images/' . $hallenquirie->sign_image) }}" alt="Sign Image" style="max-width: 200px;">
-                                        </div>
-                                    @else
-                                        <p>No sign image uploaded.</p>
-                                    @endif
                     </div>
                     <hr>
 
@@ -447,5 +451,102 @@
             </div>
         </div>
     </div>
+
+<script>
+    function printDiv(divId) {
+    var div = document.getElementById(divId).cloneNode(true);
+    var imgs = div.querySelectorAll('img');
+    var promises = [];
+
+    // Convert all image src to base64 or absolute URLs
+    imgs.forEach(function(img) {
+        if (img.src) {
+            // Convert to absolute URL
+            var absUrl = new URL(img.src, window.location.origin).href;
+            img.src = absUrl;
+
+            // Create a promise for fetching and converting the image to base64
+            var promise = fetch(absUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.blob();
+                })
+                .then(blob => {
+                    return new Promise((resolve) => {
+                        var reader = new FileReader();
+                        reader.onloadend = function() {
+                            img.src = reader.result; // Set base64 data URL
+                            resolve();
+                        };
+                        reader.readAsDataURL(blob);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching image for print:', error);
+                    resolve(); // Continue even if one image fails
+                });
+
+            promises.push(promise);
+        }
+    });
+
+    // Wait for all image conversions to complete
+    Promise.all(promises).then(() => {
+        var content = div.innerHTML;
+        var myWindow = window.open('', '', 'height=800,width=800');
+        myWindow.document.write('<html><head><title>Print Preview</title>');
+        myWindow.document.write(`
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    color: #333;
+                }
+                .border {
+                    border: 1px solid #ccc;
+                    padding: 10px;
+                    margin-bottom: 15px;
+                    border-radius: 4px;
+                }
+                p {
+                    margin: 5px 0;
+                    font-size: 14px;
+                }
+                .fw-bold {
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }
+                .p-3 {
+                    padding: 1rem;
+                }
+                .badge {
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    color: #fff;
+                    display: inline-block;
+                }
+                .bg-warning { background-color: #f0ad4e; }
+                .bg-success { background-color: #5cb85c; }
+                .bg-danger { background-color: #d9534f; }
+                img {
+                    width: auto;
+                    height: auto;
+                    max-width: 100%;
+                    vertical-align: top;
+                }
+            </style>
+        `);
+        myWindow.document.write('</head><body>');
+        myWindow.document.write(content);
+        myWindow.document.write('</body></html>');
+        myWindow.document.close();
+        myWindow.focus();
+        myWindow.print();
+        myWindow.close();
+    });
+}
+</script>
+
 
 @endsection
