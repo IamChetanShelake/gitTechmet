@@ -47,7 +47,7 @@
                                     <tr>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Item Name</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Price</th>
-                                        {{-- <th class="text-uppercase text-secondary text-xxs font-weight-bolder">View</th> --}}
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Description</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Action</th>
                                         {{-- <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Delete</th> --}}
                                     </tr>
@@ -59,8 +59,14 @@
                                                 <h6 class="mb-0 text-sm">{{$item->item_name}}</h6>
                                             </td>
 
+
+
                                             <td>
                                                 <h6 class="mb-0 text-sm">{{$item->price}}/-</h6>
+                                            </td>
+
+                                            <td>
+                                                <h6 class="mb-0 text-sm text-wrap">{{$item->description}}</h6>
                                             </td>
 
 
@@ -70,13 +76,13 @@
                                             <td class="text-center">
                                                 <div class="d-flex justify-content-center gap-2">
 
-                                                <a href="{{route('Edit.ItemC',$item->id)}}" class="btn btn-success">Edit</a>
-                                                <form action="{{route('Delete.ItemC',$item->id)}}" method="post">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="btn btn-danger btn-sm">Delete</button>
-                                                </form>
-                                            </div>
+                                                    <a href="{{route('Edit.ItemC',$item->id)}}" class="btn btn-success">Edit</a>
+                                                    <form action="{{route('Delete.ItemC',$item->id)}}" method="post">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button class="btn btn-danger btn-sm">Delete</button>
+                                                    </form>
+                                                </div>
 
                                             </td>
 

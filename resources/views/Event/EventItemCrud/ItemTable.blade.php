@@ -47,7 +47,7 @@
                                     <tr>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Item Name</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Price</th>
-                                        {{-- <th class="text-uppercase text-secondary text-xxs font-weight-bolder">View</th> --}}
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Description</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Action</th>
                                         {{-- <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Delete</th> --}}
                                     </tr>
@@ -63,6 +63,11 @@
                                             <td>
                                                 <h6 class="mb-0 text-sm">{{$item->price}}</h6>
                                             </td>
+
+                                            <td>
+                                                <h6 class="mb-0 text-sm text-wrap" >{{$item->description}}</h6>
+                                            </td>
+
 
 
 

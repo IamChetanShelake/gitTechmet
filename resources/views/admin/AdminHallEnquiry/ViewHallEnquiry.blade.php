@@ -452,7 +452,7 @@
         </div>
     </div>
 
-<script>
+{{-- <script>
     function printDiv(divId) {
     var div = document.getElementById(divId).cloneNode(true);
     var imgs = div.querySelectorAll('img');
@@ -544,6 +544,119 @@
         myWindow.focus();
         myWindow.print();
         myWindow.close();
+    });
+}
+</script> --}}
+
+
+<script>
+    function printDiv(divId) {
+    var div = document.getElementById(divId).cloneNode(true);
+    var imgs = div.querySelectorAll('img');
+    var promises = [];
+
+    // Convert all image src to absolute URLs and preload them
+    imgs.forEach(function(img) {
+        if (img.src) {
+            // Convert to absolute URL
+            var absUrl = new URL(img.src, window.location.origin).href;
+
+            // Create a promise to preload the image
+            var promise = new Promise((resolve, reject) => {
+                var tempImg = new Image();
+                tempImg.src = absUrl;
+
+                // When the image is fully loaded
+                tempImg.onload = function() {
+                    img.src = absUrl; // Set the absolute URL
+                    resolve();
+                };
+
+                // Handle image loading errors
+                tempImg.onerror = function() {
+                    console.error('Error loading image:', absUrl);
+                    img.src = ''; // Optionally set a placeholder or remove the image
+                    resolve(); // Continue even if the image fails to load
+                };
+            });
+
+            promises.push(promise);
+        }
+    });
+
+    // Wait for all images to load
+    Promise.all(promises).then(() => {
+        var content = div.innerHTML;
+        var myWindow = window.open('', '', 'height=800,width=800');
+        myWindow.document.write('<html><head><title>Print Preview</title>');
+        myWindow.document.write(`
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    color: #333;
+                }
+                .border {
+                    border: 1px solid #ccc;
+                    padding: 10px;
+                    margin-bottom: 15px;
+                    border-radius: 4px;
+                }
+                p {
+                    margin: 5px 0;
+                    font-size: 14px;
+                }
+                .fw-bold {
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }
+                .p-3 {
+                    padding: 1rem;
+                }
+                .badge {
+                    padding: 5px 10px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    color: #fff;
+                    display: inline-block;
+                }
+                .bg-warning { background-color: #f0ad4e; }
+                .bg-success { background-color: #5cb85c; }
+                .bg-danger { background-color: #d9534f; }
+                img {
+                    width: auto;
+                    height: auto;
+                    max-width: 100%;
+                    vertical-align: top;
+                }
+            </style>
+        `);
+        myWindow.document.write('</head><body>');
+        myWindow.document.write(content);
+        myWindow.document.write('</body></html>');
+        myWindow.document.close();
+
+        // Wait for the DOM to fully render before printing
+        setTimeout(() => {
+            myWindow.focus();
+            myWindow.print();
+            myWindow.close();
+        }, 500); // 500ms delay to ensure rendering
+    }).catch(error => {
+        console.error('Error processing images for print:', error);
+        // Optionally, open the print window without images or show an alert
+        alert('Some images could not be loaded. Printing without images.');
+        var content = div.innerHTML;
+        var myWindow = window.open('', '', 'height=800,width=800');
+        myWindow.document.write('<html><head><title>Print Preview</title></head><body>');
+        myWindow.document.write(content);
+        myWindow.document.write('</body></html>');
+        myWindow.document.close();
+        setTimeout(() => {
+            myWindow.focus();
+            myWindow.print();
+            myWindow.close();
+        }, 500);
     });
 }
 </script>
