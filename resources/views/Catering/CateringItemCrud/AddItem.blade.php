@@ -42,7 +42,7 @@
                     @enderror
                 </div>
 
-                <div class="mb-3">
+                {{-- <div class="mb-3">
                     <label for="price" class="form-label fw-bold">Price</label>
                     <input type="number" class="form-control border rounded-3 shadow-sm ps-3 @error('price') is-invalid @enderror"
                            id="price" name="price" placeholder="Enter price" required>
@@ -51,7 +51,7 @@
                         {{$message}}
                     </span>
                     @enderror
-                </div>
+                </div> --}}
 
 
                 <div class="d-flex justify-content-between mt-4">

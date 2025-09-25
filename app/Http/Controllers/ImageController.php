@@ -38,21 +38,18 @@ class ImageController extends Controller
 
     //     return redirect('/image')->with('success', 'Image added successfully');
     // }
-    
-    
+
+
     public function addImage(Request $request)
 {
     // $request->validate([
-    //     'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+    //     'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+    //     'order' => 'required|integer|min:0',
+    //     'is_pinned' => 'nullable|boolean'
     // ]);
 
     $imagee = new Image();
 
-    // if ($request->hasFile('image')) {
-    //     $imageName = time() . '.' . $request->image->extension();
-    //     $request->image->move(public_path('Gallery'), $imageName);
-    //     $imagee->image = $imageName;
-    // }
     if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->extension();
             $request->image->move('Gallery', $imageName);
@@ -60,6 +57,8 @@ class ImageController extends Controller
             $imageName = '';
         }
         $imagee->image = $imageName;
+        $imagee->order = $request->input('order', 0);
+        $imagee->is_pinned = $request->has('is_pinned') ? 1 : 0;
 
     $imagee->save();
 
@@ -94,7 +93,9 @@ class ImageController extends Controller
     public function updateImage(Request $request, $id)
 {
     // $request->validate([
-    //     'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048'
+    //     'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+    //     'order' => 'required|integer|min:0',
+    //     'is_pinned' => 'nullable|boolean'
     // ]);
 
     $imagee = Image::find($id);
@@ -108,6 +109,9 @@ class ImageController extends Controller
             }
             $imagee->image = $imageName;
         }
+
+    $imagee->order = $request->input('order', 0);
+    $imagee->is_pinned = $request->has('is_pinned') ? 1 : 0;
 
     $imagee->save();
 

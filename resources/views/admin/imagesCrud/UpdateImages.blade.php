@@ -14,12 +14,33 @@
                         <img height="80" width="80" style=" margin-left:10px; border-radius:5px;"
                             src="{{ asset('Gallery/' . $image->image) }}" alt="">
                     </div>
-                    <input type="file" name="image" class="form-control border rounded-3 shadow-sm ps-3" accept="image/*" required>
+                    <input type="file" name="image" class="form-control border rounded-3 shadow-sm ps-3" accept="image/*">
                     @error('image')
                     <span class="invalid-feedback d-block">
                         {{$message}}
                     </span>
                     @enderror
+                </div>
+
+                <div class="mb-3">
+                    <label for="order" class="form-label fw-bold">Display Order</label>
+                    <input type="number" name="order" class="form-control border rounded-3 shadow-sm ps-3" value="{{ $image->order }}" min="0" required>
+                    @error('order')
+                    <span class="invalid-feedback d-block">
+                        {{$message}}
+                    </span>
+                    @enderror
+                    <small class="form-text text-muted">Lower numbers appear first. Pinned images always appear before unpinned ones.</small>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" name="is_pinned" class="form-check-input" id="is_pinned" value="1" {{ $image->is_pinned ? 'checked' : '' }}>
+                        <label class="form-check-label fw-bold" for="is_pinned">
+                            Pin this image to the top
+                        </label>
+                    </div>
+                    <small class="form-text text-muted">Pinned images will appear at the top of the gallery.</small>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">

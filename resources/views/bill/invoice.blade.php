@@ -622,39 +622,47 @@
 
     <!-- Service Contact Details -->
     <h3 style="margin-top: 20px">Gurudakshina Auditorium – Services Contact No.</h3>
-    <table>
+
+    <table border="1" cellspacing="0" cellpadding="6" style="border-collapse: collapse; text-align:left;">
         <tr>
             <th>Role</th>
             <th>Name</th>
             <th>Contact</th>
         </tr>
-        <tr><td>Event Manager</td><td>Ketan Ahire</td><td>79722 41909</td></tr>
-        <tr><td>Event Manager (Optional)</td><td>Ajay Gangurde</td><td>74208 21466</td></tr>
-        <tr><td>Catering Service</td><td>Deepak Rai (Curry Leaves)</td><td>77220 15994</td></tr>
-        <tr><td>Catering Service</td><td>Mr. Rao</td><td>77740 62994</td></tr>
-        <tr><td>Light & Sound Assistant</td><td>Harish Pardeshi</td><td>98602 34696</td></tr>
+        <tr>
+            <td rowspan="2">Event Manager</td>
+            <td>Ketan Ahire</td>
+            <td>7972241909</td>
+        </tr>
+        <tr>
+            <td>Nayan Chavan</td>
+            <td>9552840788</td>
+        </tr>
+        <tr>
+            <td rowspan="2">Catering Service</td>
+            <td>Deepak Rai (Curry Leaves)</td>
+            <td>7722015994</td>
+        </tr>
+        <tr>
+            <td>Hiraman (Curry Leaves)</td>
+            <td>7721910303</td>
+        </tr>
+        <tr>
+            <td>Sound & Light Engineer</td>
+            <td>Harish Pardeshi</td>
+            <td>9860234696</td>
+        </tr>
+        <tr>
+            <td>Photographer & Video Grapher</td>
+            <td>Vishal Sonawane</td>
+            <td>9766184642</td>
+        </tr>
     </table>
+
 
 </div>
 
-{{-- <div style="text-align: right; margin-top: 20px; margin-right: 20px;">
-    <p style="margin-top: 20px;font-weight: bold;font-size:12px;">Customer Signature</p>
-    @if ($enquiry->sign_image)
-        <div style="display: inline-block; margin-top: 10px;">
-            <img src="{{ public_path('sign_images/' . $enquiry->sign_image) }}" alt="Signature" style="width: 100px; height: 50px;">
-        </div>
 
-    @elseif ($enquiry->signature_type === 'text' && $enquiry->typed_signature)
-        <div style="display: inline-block; margin-top: 10px;">
-            <p style="font-family: cursive; font-size: 18px; font-weight: bold;">
-                {{ $enquiry->typed_signature }}
-            </p>
-        </div>
-    @else
-        <p style="font-style: italic; font-size: 12px;">No signature provided.</p>
-    @endif
-
-</div> --}}
 
 
 

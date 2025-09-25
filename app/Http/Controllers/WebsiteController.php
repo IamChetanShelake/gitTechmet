@@ -19,6 +19,7 @@ use App\Models\Hall_Image;
 use App\Models\HallEnquiry;
 use App\Models\OurFacilite;
 use App\Models\PaymentTransaction;
+use App\Models\Event;
 use Illuminate\Http\Request;
 
 class WebsiteController extends Controller
@@ -31,7 +32,8 @@ class WebsiteController extends Controller
         $testss = Test::all();
         $contacts = Contact::all();
         $ourfacilities = OurFacilite::all();
-        return view('website.index',compact('pages','halls','landings','facilites','testss','contacts','ourfacilities'));
+        $upcomingEvents = Event::upcoming()->limit(6)->get();
+        return view('website.index',compact('pages','halls','landings','facilites','testss','contacts','ourfacilities','upcomingEvents'));
     }
 
     public function about(){
@@ -55,7 +57,10 @@ class WebsiteController extends Controller
 
     public function gallery(){
        // return 'Hello world!';
-       $images = Image::all();
+       $images = Image::orderBy('is_pinned', 'desc')
+                      ->orderBy('order', 'asc')
+                      ->orderBy('created_at', 'desc')
+                      ->get();
        $pages= Page::get();
        $contacts = Contact::all();
 
@@ -92,6 +97,15 @@ class WebsiteController extends Controller
         $page = Page::find($id);
         $contacts = Contact::all();
         return view('website.page-details',compact('pages','page','contacts'));
+    }
+
+    public function eventDetail($id){
+        $pages = Page::get();
+        $event = Event::findOrFail($id);
+        $contacts = Contact::all();
+        $upcomingEvents = Event::upcoming()->where('id', '!=', $id)->limit(3)->get();
+
+        return view('website.event-detail', compact('pages', 'event', 'contacts', 'upcomingEvents'));
     }
 
     public function privacyPolicy($id)
@@ -142,7 +156,7 @@ class WebsiteController extends Controller
         $rentAmount = $booking->total_rent ?? 0;
         $depositAmount = $booking->total_deposit ?? 0;
         $rentWithGst = $rentAmount * 1.18;
-        
+
         $status = [
             'deposit_paid' => false,
             'rent_paid' => false,
@@ -192,7 +206,7 @@ class WebsiteController extends Controller
     private function calculateTotalAmount($bookedHall)
     {
         $hallRent = $bookedHall->total_rent ?? 0;
-        
+
         // Get accessories if any
         $accessoriesAmount = 0;
         if ($bookedHall->enquiry && $bookedHall->enquiry->accessorie) {
@@ -202,10 +216,10 @@ class WebsiteController extends Controller
                 $accessoriesAmount = $accessories->sum('price');
             }
         }
-        
+
         $subtotal = $hallRent + $accessoriesAmount;
         $gst = $subtotal * 0.18; // 18% GST
-        
+
         return $subtotal + $gst;
     }
 }

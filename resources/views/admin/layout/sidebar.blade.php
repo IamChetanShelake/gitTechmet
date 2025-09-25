@@ -34,68 +34,24 @@
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
 <style>
-    /* Hide Scrollbar in Sidebar */
+    /* Enable Scrollbar in Sidebar */
     #sidenav-main {
         overflow-y: auto;
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* Internet Explorer 10+ */
     }
 
-    #sidenav-main::-webkit-scrollbar {
-        width: 0px; /* Chrome, Safari, Edge */
-        background: transparent;
-    }
-
-    #sidenav-main::-webkit-scrollbar-thumb {
-        background: transparent;
-    }
-
-    /* Hide scrollbar for sidebar content */
+    /* Enable scrollbar for sidebar content */
     #sidenav-collapse-main {
         overflow-y: auto;
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* Internet Explorer 10+ */
     }
 
-    #sidenav-collapse-main::-webkit-scrollbar {
-        width: 0px; /* Chrome, Safari, Edge */
-        background: transparent;
-    }
-
-    #sidenav-collapse-main::-webkit-scrollbar-thumb {
-        background: transparent;
-    }
-
-    /* Hide scrollbar for navbar-nav */
+    /* Enable scrollbar for navbar-nav */
     .navbar-nav {
         overflow-y: auto;
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* Internet Explorer 10+ */
     }
 
-    .navbar-nav::-webkit-scrollbar {
-        width: 0px; /* Chrome, Safari, Edge */
-        background: transparent;
-    }
-
-    .navbar-nav::-webkit-scrollbar-thumb {
-        background: transparent;
-    }
-
-    /* Hide scrollbar for the entire sidebar */
+    /* Enable scrollbar for the entire sidebar */
     .sidenav {
         overflow-y: auto;
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* Internet Explorer 10+ */
-    }
-
-    .sidenav::-webkit-scrollbar {
-        width: 0px; /* Chrome, Safari, Edge */
-        background: transparent;
-    }
-
-    .sidenav::-webkit-scrollbar-thumb {
-        background: transparent;
     }
 </style>
 
@@ -119,7 +75,7 @@
     </div>
     <hr class="horizontal dark mt-0 mb-2">
     <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main" >
-        <ul class="navbar-nav" style="margin-bottom: 30px !important;">
+        <ul class="navbar-nav" style="margin-bottom: 30px !important;overflow-x: hidden;">
             <!-- <li class="nav-item">
                 <a class="nav-link {{ Request::is('home') ? 'active bg-gradient-dark text-white' : 'text-dark' }} " style="font-size: 16px;"   href="{{ url('/home') }}">
                     <i class="material-symbols-rounded opacity-5">dashboard</i>
@@ -296,7 +252,19 @@
                 </a>
             </li>
 
-            
+            <li class="nav-item">
+                <a class="nav-link {{ Request::is('admin/events*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('admin.events.index')}}">
+                    <i class="material-symbols-rounded opacity-5">event</i>
+                    <span class="nav-link-text ms-1">Upcoming Events</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ Request::is('admin/calendar*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('admin.calendar')}}">
+                    <i class="material-symbols-rounded opacity-5">calendar_month</i>
+                    <span class="nav-link-text ms-1">Calendar</span>
+                </a>
+            </li>
 
             <li class="nav-item">
                 <a id="toggleMenu2" class="nav-link text-dark" style="font-size: 16px; cursor: pointer; user-select: none;">

@@ -65,12 +65,12 @@
     <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main" >
         <ul class="navbar-nav" style="margin-bottom: 30px !important;">
 
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link {{ Request::is('/catering-panel') ? 'active bg-gradient-dark text-white' : 'text-dark' }} " style="font-size: 16px;"   href="{{ route('Catering.Dashboard') }}">
                     <i class="material-symbols-rounded opacity-5">dashboard</i>
                     <span class="nav-link-text ms-1">Dashboard</span>
                 </a>
-            </li>
+            </li> --}}
 
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('Catering.BookedHalls') ? 'active bg-gradient-dark text-white' : 'text-dark' }} " style="font-size: 16px;"   href="{{ route('Catering.BookedHalls') }}">

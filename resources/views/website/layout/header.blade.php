@@ -42,7 +42,6 @@
             /* border-bottom: 2px solid #d67f21; */
         }
     </style>
-
 </head>
 
 <body>

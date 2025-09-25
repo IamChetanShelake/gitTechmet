@@ -42,6 +42,8 @@
                                         {{-- <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Name</th> --}}
 
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Image</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Order</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Pinned</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">View</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Action</th>
                                     </tr>
@@ -51,27 +53,25 @@
                                         <tr>
                                             <td>
                                             @if(isset($image) && $image->image)
-                                            <img src="{{ asset('Gallery/' . $image->image) }}" class="avatar avatar-sm me-3 border-radius-lg" alt="Testomonial Image">
+                                            <img src="{{ asset('Gallery/' . $image->image) }}" class="avatar avatar-sm me-3 border-radius-lg" alt="Gallery Image">
                                             @else
                                                 <p>No Image Available</p>
                                             @endif
-                                        </td>
-                                            {{-- <td class="text-wrap">
-                                                {!! $product->description !!}
-                                            </td> --}}
-                                            {{-- <td>
-                                                <h6 class="mb-0 text-sm">{{ $product->type->title }}</h6>
-                                            </td> --}}
-
-                                            <td>
-                                                <a href="{{ route('View.Image', $image->id) }}" class="btn btn-info">View </a>
                                             </td>
-
-
-
+                                            <td>{{ $image->order }}</td>
                                             <td>
-                                                <a class="btn btn-success" href="{{route('Edit.Image',$image->id)}}">Edit</a>
-                                                <a class="btn btn-danger" href="{{route('Delete.Image', $image->id)}}">Delete</a>
+                                                @if($image->is_pinned)
+                                                    <span class="badge bg-success">Pinned</span>
+                                                @else
+                                                    <span class="badge bg-secondary">Not Pinned</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('View.Image', $image->id) }}" class="btn btn-info btn-sm">View</a>
+                                            </td>
+                                            <td>
+                                                <a class="btn btn-success btn-sm" href="{{route('Edit.Image',$image->id)}}">Edit</a>
+                                                <a class="btn btn-danger btn-sm" href="{{route('Delete.Image', $image->id)}}">Delete</a>
                                             </td>
                                         </tr>
                                     @endforeach

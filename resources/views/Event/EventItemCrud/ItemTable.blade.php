@@ -46,7 +46,7 @@
                                 <thead>
                                     <tr>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Item Name</th>
-                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Price</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Quantity</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Description</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Action</th>
                                         {{-- <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Delete</th> --}}
@@ -61,7 +61,7 @@
 
 
                                             <td>
-                                                <h6 class="mb-0 text-sm">{{$item->price}}</h6>
+                                                <h6 class="mb-0 text-sm">{{$item->quantity}}</h6>
                                             </td>
 
                                             <td>

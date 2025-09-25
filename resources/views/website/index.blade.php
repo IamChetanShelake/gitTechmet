@@ -1,6 +1,7 @@
 @extends('website.layout.master')
 
 @section('content')
+
     <!-- content begin -->
     <div class="no-bottom no-top" id="content">
 
@@ -317,7 +318,7 @@
 
         {{-- <section class="jarallax relative overflow-hidden text-light section-dark">
             <div class="abs abs-centered w-30">
-                <div class="box-slider-decor"></div>
+                <div class="box-slider-decor">Testimonials</div>
             </div>
 
             <img src="{{ asset('website/assets/images/background/Audi.jpeg') }}"
@@ -341,31 +342,70 @@
             </div>
         </section> --}}
 
-
-
-        <section class="jarallax relative overflow-hidden text-light section-dark">
+       <section class="jarallax relative overflow-hidden text-light section-dark">
             <div class="abs abs-centered w-30">
-                <div class="box-slider-decor d-none d-lg-block"></div>
+                <div class="box-slider-decor"></div>
             </div>
 
-            <img src="{{ asset('website/assets/images/background/Audi.jpeg') }}" class="jarallax-img" alt=""
-                style="filter: brightness(70%); width: 100%; height: auto;">
+            <img src="{{ asset('website/assets/images/background/Audi.jpeg') }}"
+                            class="jarallax-img"
+                            alt=""
+                            style="filter: brightness(70%); width: 100%; height: auto;">
             <div class="container">
                 <div class="row">
-                    <div class="col-lg-8 offset-lg-2 text-center">
-                        <div class="owl-single-dots owl-carousel owl-theme">
+                    <div class="col-lg-4 offset-lg-4 text-center">
+                        <div class="owl-single-dots owl-carousel owl-theme" style="margin-top:60px;">
                             @foreach ($testss as $test)
-                                <div class="item">
-                                    <i class="icofont-quote-left id-color fs-40 mb-4 wow fadeInUp"></i>
-                                    <h3 class="mb-4 wow fadeInUp fs-36">{{ $test->description }}</h3>
-                                    <span class="wow fadeInUp">{{ $test->title }}</span>
-                                </div>
+                            <div class="item text-center">
+                                <i class="icofont-quote-left id-color fs-40 mb-4 wow fadeInUp"></i>
+                                <h3 class="mb-4 wow fadeInUp fs-30 dynamic-text">{{$test->description}}</h3>
+                                <span class="wow fadeInUp">{{$test->title}}</span>
+                            </div>
                             @endforeach
                         </div>
+
                     </div>
                 </div>
             </div>
         </section>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const descriptions = document.querySelectorAll(".dynamic-text");
+
+                descriptions.forEach(desc => {
+                    const textLength = desc.innerText.trim().length;
+                    const item = desc.closest(".item");
+
+                    if (textLength > 200) {
+                        // very large text → shrink font, no vertical center
+                        desc.style.fontSize = "16px";
+                        desc.style.lineHeight = "1.4";
+                    } else if (textLength > 100) {
+                        // medium text → slightly smaller, no vertical center
+                        desc.style.fontSize = "25px";
+                    } else {
+                        // small text → keep large font + center vertically
+                        desc.style.fontSize = "23px";
+
+                        item.style.display = "flex";
+                        item.style.flexDirection = "column";
+                        item.style.justifyContent = "center";
+                        item.style.minHeight = "250px"; // adjust as needed
+                    }
+                });
+            });
+</script>
+
+
+
+
+
+
+
+
+
+
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
@@ -384,6 +424,62 @@
                 });
             });
         </script>
+
+        {{-- Upcoming Events Section --}}
+        @if($upcomingEvents->count() > 0)
+        <section id="upcoming-events" class="relative lines-deco">
+            <div class="container relative z-2">
+                <div class="row g-4">
+                    <div class="col-lg-8 offset-lg-2 text-center">
+                        <div class="subtitle wow fadeInUp mb-3">Upcoming Events</div>
+                        <h2 class="wow fadeInUp">Don't Miss Our Events</h2>
+                        <p class="wow fadeInUp">Stay updated with our upcoming events and join us for memorable experiences.</p>
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-4">
+                    @foreach($upcomingEvents as $event)
+                    <div class="col-lg-4 col-md-6 wow fadeInUp" data-wow-delay=".3s">
+                        <div class="relative bg-white border-grey p-4 rounded-1 h-100">
+                            @if($event->image)
+                                <div class="mb-3">
+                                    <img src="{{ asset('Event_images/' . $event->image) }}" class="w-100 rounded-up-100" alt="{{ $event->title }}" style="height: 200px; object-fit: cover;">
+                                </div>
+                            @endif
+                            <div class="event-date mb-3" style="text-align: center;">
+                                <span class="bg-color text-white px-3 py-2 rounded-1 fs-14">
+                                    <i class="icofont-calendar"></i> {{ $event->formatted_date }}
+                                    @if($event->formatted_time)
+                                        <i class="icofont-clock-time"></i> {{ $event->formatted_time }}
+                                    @endif
+                                </span>
+                            </div>
+                            <h4 class="mb-2">{{ $event->title }}</h4>
+                            @if($event->description)
+                                <p class="mb-3 text-muted">{{ Str::limit($event->description, 100) }}</p>
+                            @endif
+                            @if($event->location)
+                                <div class="mb-3">
+                                    <i class="icofont-location-pin text-primary"></i>
+                                    <span class="ms-2">{{ $event->location }}</span>
+                                </div>
+                            @endif
+                            <div class="text-center">
+                                <a href="{{ route('event.detail', $event->id) }}" class="btn-line">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
+                @if($upcomingEvents->count() > 3)
+                <div class="text-center mt-4">
+                    <a href="#upcoming-events" class="btn-main">View All Events</a>
+                </div>
+                @endif
+            </div>
+        </section>
+        @endif
 
 
         {{-- <section class="relative bg-light lines-deco">
@@ -755,6 +851,30 @@
                 document.getElementById("videoModal").addEventListener("hidden.bs.modal", function() {
                     videoIframe.src = ""; // Stop video when modal is closed
                 });
+
+                // Handle scrolling to upcoming events section
+                function scrollToUpcomingEvents() {
+                    var element = document.getElementById('upcoming-events');
+                    if (element) {
+                        element.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+
+                if (window.location.hash === '#upcoming-events') {
+                    // Try scrolling immediately
+                    scrollToUpcomingEvents();
+
+                    // Also try after DOM is fully loaded
+                    window.addEventListener('load', function() {
+                        setTimeout(scrollToUpcomingEvents, 100);
+                    });
+
+                    // Fallback with longer delay for slow loading content
+                    setTimeout(scrollToUpcomingEvents, 1000);
+                }
             });
         </script>
     @endsection

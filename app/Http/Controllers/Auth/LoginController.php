@@ -40,18 +40,12 @@ class LoginController extends Controller
     }
     protected function authenticated(Request $request, $user)
     {
-        // if ($user->role === 'admin') {
-        //     return redirect('/admin-dashboard');
-        // } else {
-        //     return redirect('/');
-        // }
-
         if ($user->role === 'admin') {
             return redirect('/admin/payment-transactions');
         } elseif ($user->role === 'event') {
-            return redirect('/event-panel');
+            return redirect('/event-booked-halls');
         } elseif ($user->role === 'catering') {
-            return redirect('/catering-panel');
+            return redirect('/catering-booked-halls');
         } else {
             return redirect('/');
         }

@@ -33,6 +33,7 @@ use App\Http\Controllers\CateringItemController;
 use App\Http\Controllers\WhatsAppTestController;
 use App\Http\Controllers\EventCateringController;
 use App\Http\Controllers\Admin\PaymentTransactionController;
+use App\Http\Controllers\CalendarController;
 
 
 /*
@@ -67,6 +68,8 @@ Route::get('/hall-details/{id}',[WebsiteController::class,'hallDetails'])->name(
 Route::get('/enquiry',[WebsiteController::class,'enquiry'])->name('Enquiry.Page');
 
 Route::get('/legal-page/{id}',[WebsiteController::class,'legal'])->name('legal.pages');
+
+Route::get('/event/{id}', [WebsiteController::class, 'eventDetail'])->name('event.detail');
 
 Route::post('/enquiry/store', [HallEnquiryController::class, 'store'])->name('enquiry.store');
 
@@ -104,7 +107,7 @@ Route::middleware(['role:event'])->group(function () {
 
      Route::get('/item',[EventItemController::class,'index'])->name('Item.Table');
 
-    //  Route::view('/item/ViewAdd','Event.EventItemCrud.AddItem')->name('View.AddItem');
+     Route::view('/item/ViewAdd','Event.EventItemCrud.AddItem')->name('View.AddItem');
 
      Route::post('/item/Additem',[EventItemController::class,'add'])->name('Add.Item');
 
@@ -508,6 +511,9 @@ Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotat
 
     Route::get('/viewDonation/{id}',[DonationController::class,'view'])->name('View.Donation');
 
+    // Admin Events Routes
+    Route::resource('admin/events', App\Http\Controllers\Admin\EventController::class, ['as' => 'admin']);
+
     // Admin Payment Transaction Routes
     Route::prefix('admin/payment-transactions')->name('admin.payment-transactions.')->group(function () {
         Route::get('/', [PaymentTransactionController::class, 'index'])->name('index');
@@ -516,6 +522,11 @@ Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotat
         Route::get('/analytics/dashboard', [PaymentTransactionController::class, 'analytics'])->name('analytics');
         Route::post('/{id}/refund', [PaymentTransactionController::class, 'refund'])->name('refund');
     });
+
+    // Calendar Routes
+    Route::get('/admin/calendar', [CalendarController::class, 'index'])->name('admin.calendar');
+    Route::get('/admin/calendar/events', [CalendarController::class, 'getEvents'])->name('admin.calendar.events');
+    Route::get('/admin/calendar/stats', [CalendarController::class, 'getStats'])->name('admin.calendar.stats');
 
     //Catering Routes
 
