@@ -50,7 +50,7 @@ class ImageController extends Controller
 
     $imagee = new Image();
 
-    if ($request->hasFile('image')) {
+        if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->extension();
             $request->image->move('Gallery', $imageName);
         } else {

@@ -343,7 +343,7 @@
         </section> --}}
 
        <section class="jarallax relative overflow-hidden text-light section-dark">
-            <div class="abs abs-centered w-30">
+            <div class="abs abs-centered w-30 d-none d-lg-block">
                 <div class="box-slider-decor"></div>
             </div>
 
@@ -683,17 +683,6 @@
             <div class="spacer-single"></div>
         </section>
 
-        {{-- <section class="no-top no-bottom section-dark" aria-label="section">
-        <a class="d-block hover popup-youtube" href="https://youtu.be/tgXmmA3M8yY">
-            <div class="relative overflow-hidden">
-                <div class="absolute start-0 w-100 abs-middle fs-36 text-white text-center z-2">
-                    <div class="player wow scaleIn"><span></span></div>
-                </div>
-                <div class="absolute w-100 h-100 top-0 bg-dark hover-op-05"></div>
-                <img src="{{asset('website/assets/images/background/9.webp')}}" class="img-fluid" alt="">
-            </div>
-        </a>
-        </section> --}}
 
         <section class="bg-light relative pt50 no-bottom">
             <div class="container relative z-2">
@@ -725,16 +714,7 @@
 
 
 
-                            {{-- <div class="col-3">
-                                <a href="https://youtu.be/fFfS-5J3FKs"
-                                    class="d-block hover relative overflow-hidden text-light">
-                                    <img src="{{ asset('website/assets/images/gallery-square/3.jpeg') }}"
-                                        class="w-100 hover-scale-1-1" alt="">
-                                    <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                        <i class="fa-brands fa-youtube" style="color: red"></i>
-                                    </div>
-                                </a>
-                            </div> --}}
+
 
 
                             <div class="col-3">

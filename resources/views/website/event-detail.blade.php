@@ -68,7 +68,7 @@
                                             <div class="bg-light p-3 rounded-1">
                                                 <div class="d-flex align-items-start">
                                                     <i class="icofont-location-pin fs-20 text-primary me-2 mt-1"></i>
-                                                    <span>{{ $event->location ?? 'Venue to be announced' }}</span>
+                                                    <span style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">{{ $event->location ?? 'Venue to be announced' }}</span>
                                                 </div>
                                             </div>
                                         </div>
