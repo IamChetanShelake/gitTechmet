@@ -156,6 +156,13 @@
                     <span class="nav-link-text ms-1">Gallery</span>
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ Request::is('videos*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('videos.index')}}">
+                    <i class="material-symbols-rounded opacity-5">video_library</i>
+                    <span class="nav-link-text ms-1">Videos</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link {{ Request::is('ourfacilitie') ? 'active bg-gradient-dark text-white' : 'text-dark' }}" style="font-size: 16px;"  href="{{route('OurFacilitie.Table')}}">
                     <i class="material-symbols-rounded opacity-5">settings_suggest</i>

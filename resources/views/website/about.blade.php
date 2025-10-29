@@ -270,248 +270,307 @@
 
             </section>
 
-            {{-- <section class="relative pt50 no-bottom" >
 
 
-                <div class="container-fluid">
-                    <div class="row g-0">
-                        <div class="col-md-6">
-                            <div class="row g-0">
-                                <div class="col-3">
-                                    <a href="https://youtu.be/Rsz7XpPZ1ck" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/3.jpeg')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="https://youtu.be/fFfS-5J3FKs" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/2.jpeg')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="https://youtu.be/tgXmmA3M8yY" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/Audi 2.jpg')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/Audi 1.png')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="row g-0">
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/Audi 3.jpg')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/Audi gr.jpg')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/Audi VIP.jpg')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{asset('website/assets/images/gallery-square/6.jpeg')}}" class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
 
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section> --}}
-
+        <!-- content close -->
             <section class="bg-light relative pt50 no-bottom">
-                <div class="container relative z-2">
-                    <div class="row g-4">
-                        <div class="col-lg-8 offset-lg-2 mb-4 text-center">
-                            <div class="subtitle wow fadeInUp mb-3">Our Youtube</div>
-                            <h2 class="wow fadeInUp"></h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="container-fluid">
-                    <div class="row g-0">
-                        <div class="col-md-6">
-                            <div class="row g-0">
-
-                                <!-- Video 1 -->
-                                <div class="col-3">
-                                    <a href="https://youtu.be/fFfS-5J3FKs"
-                                        class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="fFfS-5J3FKs">
-                                        <img src="{{ asset('website/assets/images/gallery-square/3.jpeg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-
-
-
-                                {{-- <div class="col-3">
-                                    <a href="https://youtu.be/fFfS-5J3FKs"
-                                        class="d-block hover relative overflow-hidden text-light">
-                                        <img src="{{ asset('website/assets/images/gallery-square/3.jpeg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div> --}}
-
-
-
-                                <div class="col-3">
-                                    <a href="https://youtu.be/Rsz7XpPZ1ck"
-                                        class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="Rsz7XpPZ1ck">
-                                        <img src="{{ asset('website/assets/images/gallery-square/2.jpeg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="https://youtu.be/tgXmmA3M8yY"
-                                        class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="tgXmmA3M8yY">
-                                        <img src="{{ asset('website/assets/images/gallery-square/Audi 2.jpg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="">
-                                        <img src="{{ asset('website/assets/images/gallery-square/Audi 1.png') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="row g-0">
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="">
-                                        <img src="{{ asset('website/assets/images/gallery-square/Audi 3.jpg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="">
-                                        <img src="{{ asset('website/assets/images/gallery-square/Audi gr.jpg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="">
-                                        <img src="{{ asset('website/assets/images/gallery-square/Audi VIP.jpg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="col-3">
-                                    <a href="#" class="d-block hover relative overflow-hidden text-light video-link"
-                                        data-video-id="">
-                                        <img src="{{ asset('website/assets/images/gallery-square/6.jpeg') }}"
-                                            class="w-100 hover-scale-1-1" alt="">
-                                        <div class="abs abs-centered fs-24 text-white hover-op-0">
-                                            <i class="fa-brands fa-youtube" style="color: red"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-body p-0">
-                            <div class="ratio ratio-16x9">
-                                <iframe id="videoIframe" src="" title="YouTube video" allowfullscreen></iframe>
-                            </div>
-                        </div>
+            <div class="container relative z-2">
+                <div class="row g-4">
+                    <div class="col-lg-8 offset-lg-2 mb-4 text-center">
+                        <div class="subtitle wow fadeInUp mb-3">Our Youtube</div>
+                        <h2 class="wow fadeInUp">Watch Our Videos</h2>
                     </div>
                 </div>
             </div>
-            <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                    var videoModal = new bootstrap.Modal(document.getElementById("videoModal"));
-                    var videoIframe = document.getElementById("videoIframe");
 
-                    document.querySelectorAll(".video-link").forEach(function (link) {
-                        link.addEventListener("click", function (event) {
-                            event.preventDefault(); // Prevent redirecting to YouTube
+            <div class="container-fluid">
+                @if($videos->count() > 0)
+                 @php
+                                // Calculate dynamic width for perfect fit
+                                $videoCount = $videos->count();
+                                if ($videoCount >=  8) {
+                                    // For 8 videos, calculate width to fit perfectly
+                                    // $containerWidth = 100; // 100% of container
+                                    // $videoWidth = $containerWidth / 8; // Each video takes 12.5% of width
+                                    $flexStyle = "justify-content: flex-start;";
+                                } else {
+                                    // Default fixed width for other counts
+                                    $flexStyle = "justify-content: center;";
+                                }
+                            @endphp
+                    <div class="d-flex overflow-auto pb-3 modern-scroll" style="flex-wrap: nowrap; {{ $flexStyle }}">
+                        @foreach($videos as $video)
+                            @php
+                                // Extract YouTube video ID from URL
+                                $videoId = '';
+                                $url = trim($video->youtube_url);
 
-                            var videoId = link.getAttribute("data-video-id");
-                            if (videoId) {
-                                videoIframe.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1&rel=0";
-                                videoModal.show();
+                                // If it's already just the video ID (11 characters)
+                                if (preg_match('/^[a-zA-Z0-9_-]{11}$/', $url)) {
+                                    $videoId = $url;
+                                }
+                                // Try to extract from various YouTube URL formats
+                                elseif (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/', $url, $matches)) {
+                                    $videoId = $matches[1];
+                                }
+                                // Fallback: try to find any 11-character sequence that looks like a video ID
+                                elseif (preg_match('/([a-zA-Z0-9_-]{11})/', $url, $matches)) {
+                                    $videoId = $matches[1];
+                                }
+                            @endphp
+
+
+
+                            <div class="me-2" style="width:200px; flex: 0 0 auto;">
+                                <a href="#" class="d-block hover relative overflow-hidden text-light video-link rounded-3"
+                                    data-video-id="{{ $videoId }}" data-url="{{ $video->youtube_url }}" style="width:200px; height: 180px;">
+                                    <img src="{{ asset('video_thumbnails/' . $video->thumbnail) }}"
+                                        class="w-100 h-100 object-fit-cover hover-scale-1-1 rounded-3" alt="{{ $video->title ?? 'Video' }}">
+                                    <div class="abs abs-centered fs-24 text-white hover-op-0">
+                                        <i class="fa-brands fa-youtube" style="color: red; font-size: 2rem;"></i>
+                                    </div>
+                                    {{-- @if($video->title)
+                                        <div class="abs bottom-0 w-100 bg-dark bg-opacity-75 text-white p-2 rounded-bottom-3">
+                                            <h6 class="mb-0 fs-12 text-center">{{ $video->title }}</h6>
+                                        </div>
+                                    @endif --}}
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <style>
+                        /* Thin Scrollbar Styling */
+                        .modern-scroll {
+                            scrollbar-width: thin; /* Firefox */
+                            scrollbar-color: rgba(112, 83, 58, 0.3) transparent; /* Firefox */
+                        }
+
+                        .modern-scroll::-webkit-scrollbar {
+                            height: 2px; /* Very thin scrollbar */
+                        }
+
+                        .modern-scroll::-webkit-scrollbar-track {
+                            background: transparent; /* Transparent track */
+                        }
+
+                        .modern-scroll::-webkit-scrollbar-thumb {
+                            background: rgba(112, 83, 58, 0.3); /* Semi-transparent brand color */
+                            border-radius: 10px;
+                        }
+
+                        .modern-scroll::-webkit-scrollbar-thumb:hover {
+                            background: rgba(112, 83, 58, 0.5); /* Slightly more visible on hover */
+                        }
+                        @media (max-width: 576px) {
+                            .modern-scroll {
+                                justify-content:flex-start !important; /* Slightly thicker scrollbar on mobile for easier touch */
                             }
-                        });
-                    });
+                        }
+                    </style>
+                @else
+                    <div class="text-center py-5">
+                        <p class="text-muted">No videos available at the moment.</p>
+                    </div>
+                @endif
+            </div>
+        </section>
+        <!-- YouTube Video Modal -->
+        <div id="videoModal" class="video-modal-overlay">
+            <div class="video-modal-content">
+                <button id="closeModal" class="video-modal-close">&times;</button>
+                <div class="video-modal-wrapper">
+                    <iframe id="videoIframe" src="" title="YouTube video" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
 
-                    document.getElementById("videoModal").addEventListener("hidden.bs.modal", function () {
-                        videoIframe.src = ""; // Stop video when modal is closed
+        <style>
+            .video-modal-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                z-index: 99999;
+                justify-content: center;
+                align-items: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .video-modal-overlay.show {
+                display: flex !important;
+                opacity: 1;
+            }
+
+            .video-modal-content {
+                background: #fff;
+                padding: 0;
+                max-width: 90vw;
+                max-height: 90vh;
+                width: 800px;
+                position: relative;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                transform: scale(0.7);
+                transition: transform 0.3s ease;
+            }
+
+            .video-modal-overlay.show .video-modal-content {
+                transform: scale(1);
+            }
+
+            .video-modal-close {
+                position: absolute;
+                top: -40px;
+                right: 0;
+                background: rgba(255, 255, 255, 0.9);
+                border: none;
+                font-size: 28px;
+                cursor: pointer;
+                color: #333;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 100000;
+                transition: background 0.2s ease;
+            }
+
+            .video-modal-close:hover {
+                background: rgba(255, 255, 255, 1);
+                transform: scale(1.1);
+            }
+
+            .video-modal-wrapper {
+                position: relative;
+                padding-top: 56.25%; /* 16:9 aspect ratio */
+                height: 0;
+            }
+
+            .video-modal-wrapper iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+
+            @media (max-width: 768px) {
+                .video-modal-content {
+                    max-width: 95vw;
+                    width: 95vw;
+                }
+
+                .video-modal-close {
+                    top: -35px;
+                    font-size: 24px;
+                    width: 35px;
+                    height: 35px;
+                }
+            }
+        </style>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var videoModal = document.getElementById("videoModal");
+                var videoIframe = document.getElementById("videoIframe");
+                var closeModal = document.getElementById("closeModal");
+
+                // Function to open modal
+                function openModal(videoId) {
+                    if (videoId && videoId.trim() !== '') {
+                        console.log('Opening video with ID:', videoId); // Debug log
+                        videoIframe.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1&rel=0&modestbranding=1";
+                        videoModal.classList.add('show');
+                        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                    } else {
+                        console.error('Invalid video ID:', videoId);
+                    }
+                }
+
+                // Function to close modal
+                function closeModalFunction() {
+                    videoModal.classList.remove('show');
+                    document.body.style.overflow = ''; // Restore scrolling
+                    // Delay clearing the iframe to allow for smooth transition
+                    setTimeout(function() {
+                        videoIframe.src = "";
+                    }, 300);
+                }
+
+                // Add click event to all video links
+                document.querySelectorAll(".video-link").forEach(function(link) {
+                    link.addEventListener("click", function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        var videoId = link.getAttribute("data-video-id");
+                        var videoUrl = link.getAttribute("data-url");
+                        console.log('Video link clicked, ID:', videoId, 'URL:', videoUrl); // Debug log
+                        openModal(videoId);
                     });
                 });
-            </script>
-        </div>
-        <!-- content close -->
 
+                // Close modal when close button is clicked
+                if (closeModal) {
+                    closeModal.addEventListener("click", function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeModalFunction();
+                    });
+                }
+
+                // Close modal when clicking outside the content
+                videoModal.addEventListener("click", function(event) {
+                    if (event.target === videoModal) {
+                        closeModalFunction();
+                    }
+                });
+
+                // Close modal with Escape key
+                document.addEventListener("keydown", function(event) {
+                    if (event.key === "Escape" && videoModal.classList.contains('show')) {
+                        closeModalFunction();
+                    }
+                });
+
+                // Handle scrolling to upcoming events section
+                function scrollToUpcomingEvents() {
+                    var element = document.getElementById('upcoming-events');
+                    if (element) {
+                        element.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+
+                if (window.location.hash === '#upcoming-events') {
+                    // Try scrolling immediately
+                    scrollToUpcomingEvents();
+
+                    // Also try after DOM is fully loaded
+                    window.addEventListener('load', function() {
+                        setTimeout(scrollToUpcomingEvents, 100);
+                    });
+
+                    // Fallback with longer delay for slow loading content
+                    setTimeout(scrollToUpcomingEvents, 1000);
+                }
+
+                // Debug: Log all video links found
+                console.log('Found video links:', document.querySelectorAll(".video-link").length);
+            });
+        </script>
 
 
 

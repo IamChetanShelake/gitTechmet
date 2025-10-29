@@ -20,6 +20,7 @@ use App\Models\HallEnquiry;
 use App\Models\OurFacilite;
 use App\Models\PaymentTransaction;
 use App\Models\Event;
+use App\Models\Video;
 use Illuminate\Http\Request;
 
 class WebsiteController extends Controller
@@ -33,7 +34,8 @@ class WebsiteController extends Controller
         $contacts = Contact::all();
         $ourfacilities = OurFacilite::all();
         $upcomingEvents = Event::upcoming()->limit(6)->get();
-        return view('website.index',compact('pages','halls','landings','facilites','testss','contacts','ourfacilities','upcomingEvents'));
+        $videos = Video::all();
+        return view('website.index',compact('pages','halls','landings','facilites','testss','contacts','ourfacilities','upcomingEvents','videos'));
     }
 
     public function about(){
@@ -42,7 +44,8 @@ class WebsiteController extends Controller
         $pages= Page::get();
         $facilites  = Facilitie::all();
         $contacts = Contact::all();
-        return view('website.about',compact('about','teams','pages','facilites','contacts'));
+        $videos = Video::all();
+        return view('website.about',compact('about','teams','pages','facilites','contacts','videos'));
     }
 
     public function facilities(){

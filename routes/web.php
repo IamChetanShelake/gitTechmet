@@ -34,6 +34,7 @@ use App\Http\Controllers\WhatsAppTestController;
 use App\Http\Controllers\EventCateringController;
 use App\Http\Controllers\Admin\PaymentTransactionController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\VideoController;
 
 
 /*
@@ -527,6 +528,15 @@ Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotat
     Route::get('/admin/calendar', [CalendarController::class, 'index'])->name('admin.calendar');
     Route::get('/admin/calendar/events', [CalendarController::class, 'getEvents'])->name('admin.calendar.events');
     Route::get('/admin/calendar/stats', [CalendarController::class, 'getStats'])->name('admin.calendar.stats');
+
+    // Video CRUD Routes
+    Route::get('/videos', [VideoController::class, 'index'])->name('videos.index');
+    Route::get('/videos/add', function() { return view('admin.videoCrud.AddVideo'); })->name('videos.add');
+    Route::post('/videos/store', [VideoController::class, 'addVideo'])->name('videos.store');
+    Route::get('/videos/edit/{id}', [VideoController::class, 'editVideo'])->name('videos.edit');
+    Route::put('/videos/update/{id}', [VideoController::class, 'updateVideo'])->name('videos.update');
+    Route::get('/videos/view/{id}', [VideoController::class, 'ViewVideo'])->name('videos.view');
+    Route::delete('/videos/delete/{id}', [VideoController::class, 'deleteVideo'])->name('videos.delete');
 
     //Catering Routes
 

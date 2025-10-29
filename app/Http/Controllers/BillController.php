@@ -113,7 +113,7 @@ public function generateBill($id)
                                 ],
                                 [
                                     "type" => "text",
-                                    "text" => $enquiry->halll->name
+                                    "text" => $enquiry->hall ?? 'N/A'
                                 ],
                                 [
                                     "type" => "text",
