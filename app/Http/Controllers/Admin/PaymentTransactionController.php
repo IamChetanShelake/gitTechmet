@@ -7,6 +7,8 @@ use App\Models\PaymentTransaction;
 use App\Models\BookedHall;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PaymentTransactionController extends Controller
 {
@@ -196,6 +198,29 @@ class PaymentTransactionController extends Controller
     }
 
     /**
+     * Generate secure hash for status/refund operations
+     */
+    private function generateStatusHash($data)
+    {
+        $secret = config('payphi.secret');
+
+        // For PhiCommerce status check API, the hash format is:
+        // amount + merchantID + merchantTxnNo + transactionType
+        $msg = $data['amount'] . $data['merchantID'] . $data['merchantTxnNo'] . $data['transactionType'];
+
+        Log::info('🔐 Generating secure hash for status check:', [
+            'transaction_type' => $data['transactionType'],
+            'message_string' => $msg,
+            'secret_length' => strlen($secret)
+        ]);
+
+        $hash = hash_hmac('sha256', $msg, $secret);
+        Log::info('🔑 Generated hash: ' . $hash);
+
+        return $hash;
+    }
+
+    /**
      * Refund a transaction
      */
     public function refund(Request $request, $id)
@@ -216,9 +241,69 @@ class PaymentTransactionController extends Controller
         }
 
         try {
-            // Create refund transaction record
+            // Generate refund reference
             $refundRef = 'REF' . now()->format('YmdHis') . rand(100, 999);
 
+            // Prepare refund payload for PhiCommerce
+            $refundPayload = [
+                'merchantID' => config('payphi.merchant_id'),
+                'merchantTxnNo' => $refundRef,
+                'originalTxnNo' => $transaction->merchant_txn_no,
+                'transactionType' => config('payphi.refund_type'),
+                'amount' => number_format($request->refund_amount, 2, '.', '')
+            ];
+
+            // Generate secure hash
+            $refundPayload['secureHash'] = $this->generateStatusHash($refundPayload);
+
+            Log::info('💰 Initiating refund via PhiCommerce:', [
+                'original_txn' => $transaction->merchant_txn_no,
+                'refund_txn' => $refundRef,
+                'amount' => $request->refund_amount,
+                'gateway_payload' => $refundPayload // Exclude secureHash from log
+            ]);
+
+            // Send refund request to PhiCommerce
+            $response = Http::timeout(30)->asForm()->post(config('payphi.command_url'), $refundPayload);
+
+            // Prepare refund transaction data
+            $refundFullResponse = [
+                'refund_reason' => $request->refund_reason,
+                'original_transaction' => $transaction->merchant_txn_no,
+                'refunded_by' => auth()->user()->name ?? 'Admin'
+            ];
+
+            if ($response->successful()) {
+                // Refund initiated successfully
+                $refundStatus = 'SUCCESS';
+                $refundFullResponse['gateway_refund_response'] = $response->body();
+
+                // Update booked hall paid amount if necessary
+                // This would depend on business logic - refunding might reduce paid_amount
+                $bookedHall = $transaction->bookedHall;
+                if ($bookedHall) {
+                    // Reduce the paid amount by refund amount
+                    $bookedHall->paid_amount = max(0, $bookedHall->paid_amount - $request->refund_amount);
+                    $bookedHall->save();
+                }
+
+                Log::info('✅ Refund processed successfully:', [
+                    'refund_reference' => $refundRef,
+                    'gateway_response' => $response->body()
+                ]);
+            } else {
+                // Refund failed at gateway
+                $refundStatus = 'FAILED';
+                $refundFullResponse['gateway_refund_error'] = $response->body();
+
+                Log::error('❌ Refund failed at PhiCommerce:', [
+                    'refund_reference' => $refundRef,
+                    'status_code' => $response->status(),
+                    'response' => $response->body()
+                ]);
+            }
+
+            // Create refund transaction record
             PaymentTransaction::create([
                 'booked_hall_id' => $transaction->booked_hall_id,
                 'merchant_txn_no' => $refundRef,
@@ -226,18 +311,25 @@ class PaymentTransactionController extends Controller
                 'customer_email' => $transaction->customer_email,
                 'customer_mobile' => $transaction->customer_mobile,
                 'transaction_type' => 'REFUND',
-                'status' => 'initiated',
-                'full_response' => [
-                    'refund_reason' => $request->refund_reason,
-                    'original_transaction' => $transaction->merchant_txn_no,
-                    'refunded_by' => auth()->user()->name ?? 'Admin'
-                ]
+                'status' => $refundStatus,
+                'full_response' => $refundFullResponse
             ]);
 
-            return back()->with('success', 'Refund initiated successfully. Reference: ' . $refundRef);
+            if ($refundStatus === 'SUCCESS') {
+                return back()->with('success', 'Refund processed successfully. Reference: ' . $refundRef);
+            } else {
+                return back()->with('error', 'Refund failed at payment gateway. Reference: ' . $refundRef);
+            }
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Failed to initiate refund: ' . $e->getMessage());
+            Log::error('💥 Refund processing failed:', [
+                'original_transaction' => $transaction->merchant_txn_no,
+                'amount' => $request->refund_amount,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->with('error', 'Failed to process refund: ' . $e->getMessage());
         }
     }
 }

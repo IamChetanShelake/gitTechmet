@@ -271,7 +271,9 @@
                                                 <script>
                                                 document.getElementById("hall").addEventListener("change", function() {
                                                     var selectedOption = this.options[this.selectedIndex];
+                                                    var hallName = selectedOption.value;
                                                     document.getElementById("hall_id").value = selectedOption.getAttribute("data-hall-id");
+                                                    document.getElementById("hall-name").textContent = hallName;
                                                 });
                                                 </script>
 
@@ -348,8 +350,14 @@
 
                                         </div>
 
-                                        <!-- Submit Button -->
+                                        <!-- Agreement Checkbox -->
                                         <div class="col-md-12 text-center mt-3">
+                                            <div class="form-check mb-3">
+                                                <input type="checkbox" class="form-check-input" id="agreement" name="agreement" required>
+                                                <label class="form-check-label" for="agreement">
+                                                    I have read, understood, and agreed to the rules and regulations for <span id="hall-name">___</span> hall. Failing which booking shall be cancelled without prior notice and no refund claim will be entertained. This enquiry form is not a final booking or confirmation. Confirmation will be communicated on given contact no. or e-mail id.
+                                                </label>
+                                            </div>
                                             <button type="submit" id="send_message" style="background-color: #AB8965; color: white; height: 40px; width: 100px;">Submit</button>
                                         </div>
                                     </div>
@@ -473,6 +481,12 @@
 
             // Form submission
             form.addEventListener('submit', function(e) {
+                const agreementCheckbox = document.getElementById('agreement');
+                if (!agreementCheckbox.checked) {
+                    alert('You must agree to the terms and conditions to submit the form.');
+                    e.preventDefault();
+                    return;
+                }
                 if (signatureType.value === 'draw' && !isCanvasEmpty()) {
                     digitalSignatureInput.value = canvas.toDataURL('image/png');
                 }

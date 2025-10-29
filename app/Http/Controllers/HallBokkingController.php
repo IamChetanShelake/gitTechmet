@@ -18,13 +18,13 @@ class HallBokkingController extends Controller
         $bookedHalls = BookedHall::with('paymentTransactions')->get();
         $eventServices = EventService::all();
         $cateringServices = CateringService::all();
-        
+
         // Add payment status to each booked hall
         foreach ($bookedHalls as $bookedHall) {
             $latestTransaction = $bookedHall->paymentTransactions()
                 ->orderBy('created_at', 'desc')
                 ->first();
-            
+
             if ($latestTransaction) {
                 $bookedHall->payment_status = $latestTransaction->status;
                 $bookedHall->payment_amount = $latestTransaction->amount;
@@ -35,7 +35,7 @@ class HallBokkingController extends Controller
                 $bookedHall->payment_date = null;
             }
         }
-        
+
         return view('admin.BookedHall.bookedHall', compact('bookedHalls','eventServices','cateringServices'));
     }
 
@@ -101,7 +101,7 @@ class HallBokkingController extends Controller
         $hallenquiry->save();
 
         $this->sendWhatsappMessage($hallenquiry, $bookingCode);
-        $this->sendWhatsappToVendors($hallenquiry);    
+        $this->sendWhatsappToVendors($hallenquiry);
 
         return redirect('/AdminHallEnquiry')->with('success', 'Booking Confirmed Successfully');
     }
@@ -416,5 +416,27 @@ class HallBokkingController extends Controller
         }
 
         return view('admin.BookedHall.ViewEventCatering', compact('eventServices', 'cateringServices'));
+    }
+
+    public function cancelBooking($id)
+    {
+        try {
+            $bookedHall = BookedHall::findOrFail($id);
+
+            // Update the related hall enquiry status to cancelled (this removes it from calendar)
+            $hallEnquiry = HallEnquiry::find($bookedHall->hall_enquiry_id);
+            if ($hallEnquiry) {
+                $hallEnquiry->status = 'cancelled';
+                $hallEnquiry->save();
+            }
+
+            // Delete the booked hall record to remove it from the booked halls list
+            $bookedHall->delete();
+
+            return response()->json(['success' => true, 'message' => 'Booking cancelled successfully.']);
+        } catch (\Exception $e) {
+            \Log::error('Error cancelling booking: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to cancel booking. Please try again.']);
+        }
     }
 }

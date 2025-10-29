@@ -32,6 +32,35 @@
             });
         </script>
 
+        <!-- JavaScript for handling cancel booking -->
+        <script>
+            function cancelBooking(bookedHallId) {
+                if (confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
+                    // Send AJAX request to cancel the booking
+                    fetch(`/admin/cancel-booking/${bookedHallId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Booking cancelled successfully.');
+                            location.reload(); // Reload the page to reflect changes
+                        } else {
+                            alert('Failed to cancel booking: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while cancelling the booking.');
+                    });
+                }
+            }
+        </script>
+
         <!-- Add Button -->
         <div class="d-flex justify-content-end p-3">
             {{-- <a class="btn btn-outline-primary btn-lg px-4 py-2" href="{{ route('admin.hall-enquiry.create') }}">Add</a> --}}
@@ -154,7 +183,7 @@
 
                                 <!-- Status -->
                                 <td class="align-middle text-center">
-                                    <span class="badge bg-info px-3 py-2">Active</span>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="cancelBooking({{ $bookedHall->id }})">Cancel Booking</button>
                                 </td>
                             </tr>
                         @endforeach

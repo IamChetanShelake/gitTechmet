@@ -498,6 +498,8 @@ Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotat
 
     Route::post('/update-status', [HallBokkingController::class, 'updateStatus'])->name('update.status');
 
+    Route::post('/admin/cancel-booking/{id}', [HallBokkingController::class, 'cancelBooking'])->name('cancel.booking');
+
 
 
 
