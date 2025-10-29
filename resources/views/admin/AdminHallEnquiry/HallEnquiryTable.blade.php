@@ -41,7 +41,7 @@
                         var customerName = row.find('td:nth-child(2) h6').text().toLowerCase();
                         var hallName = row.find('td:nth-child(3) h6').text().toLowerCase();
                         var status = '';
-                        
+
                         // Get status from badge
                         var statusBadge = row.find('td:nth-child(6) .badge');
                         if (statusBadge.hasClass('bg-warning')) {
@@ -188,6 +188,17 @@
                                     </a>
                                 </td>
 
+                                <!-- Action (Delete) -->
+                                <td class="align-middle text-center">
+                                    <form action="{{ route('admin.hall-enquiry.destroy', $hallenquirie->id) }}" method="POST" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this hall enquiry?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+
                                 {{-- <td class="align-middle text-center">
                                     <a href="{{route('Generate.Bill',$hallenquirie->id)}}">
                                         Generate Bill
@@ -208,7 +219,7 @@
                                 <!--           class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"-->
                                 <!--           style="background-color: #007bff; border-color: #007bff;">-->
                                 <!--            <span class="material-symbols-outlined" style="font-size: 18px;">request_quote</span>-->
-                                <!--            <span>Quotation</span> --}}-->
+                                <!--            <span>Quotation</span> --}}
                                 <!--            @if($hallenquirie->quotation_file)-->
                                 <!--                <a href="{{ asset('quotation/' .$hallenquirie->quotation_file) }}" target="_blank" class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"-->
                                 <!--                    style="background-color: #007bff; border-color: #007bff;">-->

@@ -291,7 +291,13 @@ class HallEnquiryController extends Controller
 
         }
 
+    public function destroy($id)
+    {
+        $hallEnquiry = HallEnquiry::findOrFail($id);
+        $hallEnquiry->delete();
 
+        return redirect()->route('AdminHallEnquiry')->with('success', 'Hall enquiry deleted successfully.');
+    }
 
 
 }
