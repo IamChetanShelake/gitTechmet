@@ -473,6 +473,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (props.duration) {
                 content += '<div class="mb-2"><strong>Duration:</strong> ' + props.duration + '</div>';
             }
+            if (props.start_time) {
+                content += '<div class="mb-2"><strong>Start Time:</strong> ' + props.start_time + '</div>';
+            }
+            if (props.end_time) {
+                content += '<div class="mb-2"><strong>End Time:</strong> ' + props.end_time + '</div>';
+            }
             content += '</div>';
 
             // Right column - Customer info

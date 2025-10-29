@@ -54,6 +54,8 @@ class CalendarController extends Controller
                     'event_type' => $booking->event_type,
                     'hall_name' => $booking->hall_name,
                     'duration' => $booking->duration,
+                    'start_time' => $booking->start_time,
+                    'end_time' => $booking->end_time,
                     'total_rent' => $booking->total_rent,
                     'total_deposit' => $booking->total_deposit,
                     'paid_amount' => $booking->paid_amount,
@@ -86,6 +88,8 @@ class CalendarController extends Controller
                     'event_type' => $enquiry->event_type,
                     'hall_name' => $enquiry->hall,
                     'duration' => $enquiry->duration,
+                    'start_time' => $enquiry->start_time,
+                    'end_time' => $enquiry->end_time,
                     'expected_audience' => $enquiry->expected_audience,
                     'status' => ucfirst($enquiry->status),
                     'special_note' => $enquiry->special_note

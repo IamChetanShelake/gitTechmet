@@ -31,7 +31,8 @@ class BookedHall extends Model
         'total_deposit',
         'paid_amount',
         'remaining_amount',
-        'booking_code'
+        'booking_code',
+        'cancelled_at'
     ];
 
     public function enquiry()

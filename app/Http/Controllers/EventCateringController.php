@@ -37,6 +37,7 @@ class EventCateringController extends Controller
         // - `event_flag = 1` (for event-related bookings)
         // - `booked_by` is NULL (unbooked halls)
         // - OR `booked_by` matches the logged-in vendor (vendor sees only their own bookings)
+        // - Include cancelled bookings so vendors know the booking was cancelled
         $eventBookings = BookedHall::where('event_flag', 1)
         ->where(function ($query) use ($vendorId) {
             $query->whereNull('event_booked_by')  // Show unbooked halls
@@ -118,19 +119,19 @@ class EventCateringController extends Controller
 
     private function sendEventWhatsAppMessage($bookedHallId, $vendorName)
     {
-       
+
         $bookedHall = \App\Models\BookedHall::find($bookedHallId);
-  
+
         if (!$bookedHall) {
             \Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
             return;
         }
-    
+
         $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
         $token = trim(config('oneclick.api_token'));
-    
+
         $contactNumber =  $bookedHall->customer_phone;
-       
+
         $customerName = $bookedHall->customer_name ?? 'Customer';
         $hallName = $bookedHall->hall_name ?? 'Event Hall';
 
@@ -156,9 +157,9 @@ class EventCateringController extends Controller
                 ]
             ]
         ];
-    
+
         $payload = json_encode($payloadArray);
-    
+
         // 🛜 Send via cURL
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $apiUrl);
@@ -169,12 +170,12 @@ class EventCateringController extends Controller
             "Authorization: Bearer " . $token,
             "Content-Type: application/json"
         ]);
-    
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
         curl_close($ch);
-    
+
         // 🧾 Log everything
         \Log::info("📤 Catering WhatsApp Message Log", [
             'contact' => $contactNumber,
@@ -183,14 +184,14 @@ class EventCateringController extends Controller
             'response' => $response,
             'error' => $curlError
         ]);
-    
+
         if ($httpCode == 200) {
             \Log::info("✅ WhatsApp catering message sent to {$contactNumber}.");
         } else {
             \Log::error("❌ WhatsApp catering message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
         }
     }
-    
+
 
     // Confirm Event Booking
     // public function confirmEvent($eventId)
@@ -217,7 +218,7 @@ class EventCateringController extends Controller
                 $this->sendBookingConfirmedMessage($eventId, $vendorName, 'event');
                 $this->sendBookingConfirmedMessageToAdmin($eventId, $vendorName);
 
-                
+
             }
 
             return redirect()->back()->with('success', 'Event booking confirmed successfully!');
@@ -355,9 +356,10 @@ class EventCateringController extends Controller
         $vendorId = Auth::id();
 
         // Fetch bookings where:
-        // - `event_flag = 1` (for event-related bookings)
+        // - `catering_flag = 1` (for catering-related bookings)
         // - `booked_by` is NULL (unbooked halls)
         // - OR `booked_by` matches the logged-in vendor (vendor sees only their own bookings)
+        // - Include cancelled bookings so vendors know the booking was cancelled
         $cateringBookings = BookedHall::where('catering_flag', 1)
         ->where(function ($query) use ($vendorId) {
             $query->whereNull('catering_booked_by')  // Show unbooked halls
@@ -446,22 +448,22 @@ class EventCateringController extends Controller
 
         private function sendCateringWhatsAppMessage($bookedHallId, $vendorName)
             {
-               
+
                 $bookedHall = \App\Models\BookedHall::find($bookedHallId);
-          
+
                 if (!$bookedHall) {
                     \Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
                     return;
                 }
-            
+
                 $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
                 $token = trim(config('oneclick.api_token'));
-            
+
                 $contactNumber =  $bookedHall->customer_phone;
-               
+
                 $customerName = $bookedHall->customer_name ?? 'Customer';
                 $hallName = $bookedHall->hall_name ?? 'Event Hall';
-        
+
                 $payloadArray = [
                     "to" => $contactNumber,
                     "recipient_type" => "individual",
@@ -484,9 +486,9 @@ class EventCateringController extends Controller
                         ]
                     ]
                 ];
-            
+
                 $payload = json_encode($payloadArray);
-            
+
                 // 🛜 Send via cURL
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, $apiUrl);
@@ -497,12 +499,12 @@ class EventCateringController extends Controller
                     "Authorization: Bearer " . $token,
                     "Content-Type: application/json"
                 ]);
-            
+
                 $response = curl_exec($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 $curlError = curl_error($ch);
                 curl_close($ch);
-            
+
                 // 🧾 Log everything
                 \Log::info("📤 Catering WhatsApp Message Log", [
                     'contact' => $contactNumber,
@@ -511,14 +513,14 @@ class EventCateringController extends Controller
                     'response' => $response,
                     'error' => $curlError
                 ]);
-            
+
                 if ($httpCode == 200) {
                     \Log::info("✅ WhatsApp catering message sent to {$contactNumber}.");
                 } else {
                     \Log::error("❌ WhatsApp catering message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
                 }
             }
-        
+
 
 
 

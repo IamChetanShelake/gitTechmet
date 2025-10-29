@@ -14,8 +14,8 @@ use App\Models\PaymentTransaction;
 class HallBokkingController extends Controller
 {
     public function index(){
-        // Fetch all booked halls with payment transaction data
-        $bookedHalls = BookedHall::with('paymentTransactions')->get();
+        // Fetch all booked halls with payment transaction data (excluding cancelled ones)
+        $bookedHalls = BookedHall::with('paymentTransactions')->whereNull('cancelled_at')->get();
         $eventServices = EventService::all();
         $cateringServices = CateringService::all();
 
@@ -430,8 +430,10 @@ class HallBokkingController extends Controller
                 $hallEnquiry->save();
             }
 
-            // Delete the booked hall record to remove it from the booked halls list
-            $bookedHall->delete();
+            // Mark the booked hall as cancelled instead of deleting it
+            // This allows event and catering panels to see that the booking was cancelled
+            $bookedHall->cancelled_at = now();
+            $bookedHall->save();
 
             return response()->json(['success' => true, 'message' => 'Booking cancelled successfully.']);
         } catch (\Exception $e) {

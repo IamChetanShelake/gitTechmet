@@ -53,7 +53,12 @@
                                 <!-- Customer Name -->
                                 <td>
                                     <div class="d-flex px-2 py-1">
-                                        <h6 class="mb-0 text-sm">{{ $eventBooking->customer_name }}</h6>
+                                        <h6 class="mb-0 text-sm">
+                                            {{ $eventBooking->customer_name }}
+                                            @if($eventBooking->cancelled_at)
+                                                <span class="badge bg-danger ms-2">CANCELLED</span>
+                                            @endif
+                                        </h6>
                                     </div>
                                 </td>
 
