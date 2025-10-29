@@ -276,6 +276,8 @@ class HallEnquiryController extends Controller
             $hallEnquiry->special_note = $request->special_note;
             $hallEnquiry->id_proof = $request->id_proof;
             $hallEnquiry->event_setup  = $request->event_setup;
+            $hallEnquiry->stage_chairs_count = $request->stage_chairs_count;
+            $hallEnquiry->hall_chairs_count = $request->hall_chairs_count;
             $hallEnquiry->status = 'Viewed';
             $hallEnquiry->accessorie = json_encode($request->accessorie ?? []);
             $hallEnquiry->save();

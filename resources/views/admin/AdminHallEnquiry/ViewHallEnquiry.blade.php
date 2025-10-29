@@ -191,9 +191,22 @@
 
                             </div>
 
-
                             <div class="row">
                                 <h4 class="mb-3 text-secondary"><strong>Accessories Details:</strong></h4>
+                                {{-- <div class="row mb-3">
+                                    <div id="stage_chairs_container" style="display:none;" class="col-md-6">
+                                        <div class="p-3 border rounded-3 shadow-sm bg-white">
+                                            <label for="stage_chairs_count" class="fw-bold text-dark mb-2">Stage Chairs Count:</label>
+                                            <input type="number" name="stage_chairs_count" value="{{ old('stage_chairs_count') }}" placeholder="Enter Stage Chairs Count" class="form-control border border-secondary rounded-2 shadow-sm ps-3">
+                                        </div>
+                                    </div>
+                                    <div id="hall_chairs_container" style="display:none;" class="col-md-6">
+                                        <div class="p-3 border rounded-3 shadow-sm bg-white">
+                                            <label for="hall_chairs_count" class="fw-bold text-dark mb-2">Hall Chairs Count:</label>
+                                            <input type="number" name="hall_chairs_count" value="{{ old('hall_chairs_count') }}" placeholder="Enter Hall Chairs Count" class="form-control border border-secondary rounded-2 shadow-sm ps-3">
+                                        </div>
+                                    </div>
+                                </div> --}}
                                 <ul class="list-group w-100">
                                     @foreach ($accessories as $accessorie)
                                         @if (
@@ -205,6 +218,7 @@
                                                 <div class="d-flex align-items-center">
                                                     <input class="form-check-input custom-checkbox me-2" type="checkbox"
                                                         name="accessorie[]" value="{{ $accessorie->id }}"
+                                                        onchange="toggleChairContainer('{{ $accessorie->name }}', this.checked)"
                                                         {{ is_array(old('accessorie', json_decode($hallenquirie->accessories ?? '[]', true))) && in_array($accessorie->id, old('accessorie', json_decode($hallenquirie->accessorie ?? '[]', true))) ? 'checked' : '' }}>
 
                                                     <label
@@ -229,6 +243,21 @@
                                         @endif
                                     @endforeach
                                 </ul>
+
+                                <div class="row mb-3 mt-2">
+                                    <div id="stage_chairs_container" style="display:none;" class="col-md-6">
+                                        <div class="p-3 border rounded-3 shadow-sm bg-white">
+                                            <label for="stage_chairs_count" class="fw-bold text-dark mb-2">Stage Chairs Count:</label>
+                                            <input type="number" name="stage_chairs_count" value="{{ old('stage_chairs_count') }}" placeholder="Enter Stage Chairs Count" class="form-control border border-secondary rounded-2 shadow-sm ps-3">
+                                        </div>
+                                    </div>
+                                    <div id="hall_chairs_container" style="display:none;" class="col-md-6">
+                                        <div class="p-3 border rounded-3 shadow-sm bg-white">
+                                            <label for="hall_chairs_count" class="fw-bold text-dark mb-2">Hall Chairs Count:</label>
+                                            <input type="number" name="hall_chairs_count" value="{{ old('hall_chairs_count') }}" placeholder="Enter Hall Chairs Count" class="form-control border border-secondary rounded-2 shadow-sm ps-3">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
 
@@ -259,6 +288,8 @@
                                     <p><strong>Special Note:</strong> {{ $hallenquirie->special_note }}</p>
                                     <p><strong>ID Proof:</strong> {{ $hallenquirie->Id_proof }}</p>
                                     <p><strong>Event Setup:</strong> {{ $hallenquirie->event_setup }}</p>
+                                    <p><strong>Stage Chairs Count:</strong> {{ $hallenquirie->stage_chairs_count ?? 'N/A' }}</p>
+                                    <p><strong>Hall Chairs Count:</strong> {{ $hallenquirie->hall_chairs_count ?? 'N/A' }}</p>
                                     @php
                                         $vendor_services = json_decode($hallenquirie->vendor, true) ?? [];
                                     @endphp
@@ -416,6 +447,28 @@
                 }, 500);
             });
         }
+
+        function toggleChairContainer(name, checked) {
+            if (name === 'Stage Chairs') {
+                document.getElementById('stage_chairs_container').style.display = checked ? 'block' : 'none';
+            } else if (name === 'Hall chairs') {
+                document.getElementById('hall_chairs_container').style.display = checked ? 'block' : 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('input[name="accessorie[]"]');
+            checkboxes.forEach(function(cb) {
+                const li = cb.closest('li');
+                const label = li ? li.querySelector('label') : null;
+                if (label) {
+                    const name = label.textContent.trim();
+                    if (cb.checked && (name === 'Stage Chairs' || name === 'Hall chairs')) {
+                        toggleChairContainer(name, true);
+                    }
+                }
+            });
+        });
     </script>
 
 

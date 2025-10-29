@@ -28,6 +28,8 @@ class HallEnquiry extends Model
         'start_time',
         'end_time',
         'expected_audience',
+        'stage_chairs_count',
+        'hall_chairs_count',
     ];
 
     // Relationship with Hall
