@@ -362,6 +362,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ViewHallEnquiry/{id}', [HallEnquiryController::class,'view'])->name('Admin.ViewHallEnquiry');
 
     Route::post('/AdminStroreOffice/{id}', [HallEnquiryController::class,'storeOffice'])->name('Admin.StoreOffice');
+    Route::get('/admin/pre-show/stream/{id}', [HallEnquiryController::class, 'preShowStream'])->name('admin.pre.show.stream');
     Route::delete('/AdminHallEnquiry/destroy/{id}', [HallEnquiryController::class,'destroy'])->name('admin.hall-enquiry.destroy');
 
 

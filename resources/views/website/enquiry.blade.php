@@ -329,18 +329,25 @@
                                             <div class="mb-3" id="upload-signature" style="display: none;">
                                                 <label for="sign_image" class="form-label">Upload Signature Image *</label>
                                                 <input type="file" name="sign_image" id="sign_image" class="form-control" accept="image/*">
+                                                @error('sign_image')
+                                                    <div class="text-danger">{{ $message }}</div>
+                                                @enderror
                                             </div>
 
                                             <div class="mb-3" id="text-signature" style="display: none;">
-                                                <label for="typed_signature" class="form-label">Type Signature (Your Name)</label>
+                                                <label for="typed_signature" class="form-label">Type Signature (Your Name) *</label>
                                                 <input type="text" name="typed_signature" id="typed_signature" class="form-control">
+                                                @error('typed_signature')
+                                                    <div class="text-danger">{{ $message }}</div>
+                                                @enderror
                                             </div>
 
                                             <div class="mb-3" id="draw-signature" style="display: none;">
-                                                <label class="form-label">Draw Signature</label>
+                                                <label class="form-label">Draw Signature *</label>
                                                 <div style="border: 1px solid #ced4da; border-radius: 0.25rem; height: 150px; background-color: #fff;">
                                                     <canvas id="signature-pad" style="width: 100%; height: 100%; touch-action: none;"></canvas>
                                                 </div>
+                                                <div id="draw-signature-error" class="text-danger" style="display: none;">Please draw your signature.</div>
                                                 <input type="hidden" name="digital_signature" id="digital-signature">
                                                 <button type="button" style="background-color: gray; color: white;font-size:14px;" id="clear-signature">Clear Signature</button>
                                             </div>
@@ -407,6 +414,9 @@
                 uploadSignature.style.display = 'none';
                 textSignature.style.display = 'none';
                 drawSignature.style.display = 'none';
+
+                // Hide errors
+                document.getElementById('draw-signature-error').style.display = 'none';
 
                 if (this.value === 'image') {
                     uploadSignature.style.display = 'block';
@@ -487,9 +497,46 @@
                     e.preventDefault();
                     return;
                 }
-                if (signatureType.value === 'draw' && !isCanvasEmpty()) {
-                    digitalSignatureInput.value = canvas.toDataURL('image/png');
+
+                // Validate signature
+                let signatureValid = false;
+                let errorMessage = '';
+
+                if (signatureType.value === 'image') {
+                    const signImage = document.getElementById('sign_image');
+                    if (signImage.files.length === 0) {
+                        errorMessage = 'Please upload a signature image.';
+                    } else {
+                        signatureValid = true;
+                    }
+                } else if (signatureType.value === 'text') {
+                    const typedSignature = document.getElementById('typed_signature');
+                    if (typedSignature.value.trim() === '') {
+                        errorMessage = 'Please enter your signature (name).';
+                    } else {
+                        signatureValid = true;
+                    }
+                } else if (signatureType.value === 'draw') {
+                    if (isCanvasEmpty()) {
+                        document.getElementById('draw-signature-error').style.display = 'block';
+                        e.preventDefault();
+                        return;
+                    } else {
+                        digitalSignatureInput.value = canvas.toDataURL('image/png');
+                        signatureValid = true;
+                    }
                 }
+
+                if (!signatureValid && errorMessage) {
+                    alert(errorMessage);
+                    e.preventDefault();
+                    return;
+                }
+
+                // Disable submit button to prevent double submission
+                const submitButton = document.getElementById('send_message');
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
             });
 
             function isCanvasEmpty() {

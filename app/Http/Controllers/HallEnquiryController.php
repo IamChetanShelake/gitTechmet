@@ -299,5 +299,13 @@ class HallEnquiryController extends Controller
         return redirect()->route('AdminHallEnquiry')->with('success', 'Hall enquiry deleted successfully.');
     }
 
+    public function preShowStream($id)
+    {
+        $hallenquirie = HallEnquiry::findOrFail($id);
+        $pdf = app(PDF::class);
+        $pdf = $pdf->loadView('admin.AdminHallEnquiry.PreShowPreparationList', compact('hallenquirie'));
+        return $pdf->stream('Pre_Show_Preparation_List.pdf');
+    }
+
 
 }

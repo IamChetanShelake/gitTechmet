@@ -7,6 +7,7 @@
                 <!-- Card Header -->
                 <div class="card-header bg-gradient-dark text-white text-center py-3">
                     <h4 class="mb-0" style="color: #fff;display:inline">Hall Enquiry Details</h4>
+                    <a href="{{ route('admin.pre.show.stream', $hallenquirie->id) }}" target="_blank" class="btn btn-success" style="float: right; margin-right: 10px;">Stream Pre Show PDF</a>
                     <button style="float: right;" onclick="printDiv('printableArea')">Print</button>
                 </div>
 
@@ -59,6 +60,8 @@
                                     <p><strong>Referred By:</strong> {{ $hallenquirie->referred_by ?? 'Not Provided' }}</p>
                                     <p><strong>Event Type:</strong> {{ $hallenquirie->event_type }}</p>
                                     <p><strong>Event Date:</strong> {{ $hallenquirie->event_date }}</p>
+                                    <p><strong>Start Time:</strong> {{ $hallenquirie->start_time }}</p>
+                                    <p><strong>End Time:</strong> {{ $hallenquirie->end_time }}</p>
                                     <p><strong>Hall:</strong> {{ $hallenquirie->hall }}</p>
                                     <p><strong>Duration:</strong> {{ $hallenquirie->duration }}</p>
                                     <p><strong>Expected Audience:</strong> {{ $hallenquirie->expected_audience }}</p>
@@ -76,6 +79,13 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Agreement Paragraph -->
+                        <div class="border rounded p-3 mt-3">
+                            <p><strong>Agreement:</strong></p>
+                            <p>I have read, understood, and agreed to the rules and regulations for <strong>{{ $hallenquirie->hall }}</strong> hall. Failing which booking shall be cancelled without prior notice and no refund claim will be entertained. This enquiry form is not a final booking or confirmation. Confirmation will be communicated on given contact no. or e-mail id.</p>
+                        </div>
+
                         <div>
                             <p class="fw-bold mb-2 text-uppercase">Sign Image</p>
                             @if ($hallenquirie->sign_image)
