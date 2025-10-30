@@ -7,6 +7,7 @@ use App\Models\HallEnquiry;
 use Barryvdh\DomPDF\PDF;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Carbon\Carbon;
 
 class RegenerateQuotations extends Command
 {
@@ -48,14 +49,26 @@ class RegenerateQuotations extends Command
             $accessoryIds = json_decode($enquiry->accessorie, true) ?? [];
             $accessories = Accessorie::whereIn('id', $accessoryIds)->get();
 
-            $totalAccessoriesPrice = $accessories->sum(fn($accessory) => $accessory->price ?? 0);
+            // Calculate total hours from start and end time
+            $startTime = Carbon::createFromFormat('H:i:s', $enquiry->start_time . ':00');
+            $endTime = Carbon::createFromFormat('H:i:s', $enquiry->end_time . ':00');
+            $totalHours = $startTime->diffInHours($endTime, false); // false to get positive difference
+
+            // Calculate total accessories price based on blocks of hours
+            $totalAccessoriesPrice = $accessories->sum(function ($accessory) use ($totalHours) {
+                $price = (float) ($accessory->price ?? 0);
+                $hours = (float) ($accessory->hours ?? 1);
+                if ($price <= 0 || $hours <= 0) return 0;
+                $blocks = floor($totalHours / $hours);
+                return $price * max($blocks, 1); // Minimum 1 block
+            });
             $totalAmount = ($enquiry->rent_amount ?? 0) + $totalAccessoriesPrice;
             $gst = $totalAmount * 0.18;
             $finalAmount = $totalAmount + $gst;
 
             // Generate PDF
             $pdf = app(PDF::class);
-            $pdf = $pdf->loadView('bill.invoice', compact('enquiry', 'accessories', 'totalAmount', 'gst', 'finalAmount'));
+            $pdf = $pdf->loadView('bill.invoice', compact('enquiry', 'accessories', 'totalAccessoriesPrice', 'totalAmount', 'gst', 'finalAmount', 'totalHours'));
 
             $fileName = 'quotation_' . $enquiry->id . '.pdf';
             $filePath = public_path('quotation/' . $fileName);

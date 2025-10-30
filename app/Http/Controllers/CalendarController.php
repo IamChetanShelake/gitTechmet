@@ -35,12 +35,13 @@ class CalendarController extends Controller
         // Get confirmed bookings
         $bookedHalls = BookedHall::whereBetween('event_date', [$start, $end])
             ->whereNotNull('event_date')
+            ->whereNull('cancelled_at')
             ->get();
 
         foreach ($bookedHalls as $booking) {
             $events[] = [
                 'id' => 'booking_' . $booking->id,
-                'title' => '📅 ' . $booking->hall_name ,
+                'title' => $booking->hall_name ,
                 'start' => $booking->event_date . 'T' . ($booking->start_time ?? '00:00:00'),
                 'end' => $booking->event_date . 'T' . ($booking->end_time ?? '23:59:59'),
                 'backgroundColor' => '#28a745', // Green for confirmed bookings
@@ -68,6 +69,7 @@ class CalendarController extends Controller
         // Get hall enquiries
         $enquiries = HallEnquiry::whereBetween('event_date', [$start, $end])
             ->where('status', '!=', 'cancelled')
+            ->whereNotIn('id', BookedHall::pluck('hall_enquiry_id'))
             ->get();
 
         foreach ($enquiries as $enquiry) {
@@ -100,6 +102,8 @@ class CalendarController extends Controller
         return response()->json($events);
     }
 
+
+
     /**
      * Get calendar statistics
      */
@@ -107,15 +111,21 @@ class CalendarController extends Controller
     {
         $month = $request->get('month', now()->format('Y-m'));
 
+
+
         $stats = [
-            'total_bookings' => BookedHall::where('event_date', 'like', $month . '%')->count(),
+            'total_bookings' => BookedHall::where('event_date', 'like', $month . '%')
+                ->whereNull('cancelled_at')->count(),
             'total_enquiries' => HallEnquiry::where('event_date', 'like', $month . '%')->count(),
-            'confirmed_bookings' => BookedHall::where('event_date', 'like', $month . '%')->count(),
+            'confirmed_bookings' => BookedHall::where('event_date', 'like', $month . '%')
+                ->whereNull('cancelled_at')->count(),
             'pending_enquiries' => HallEnquiry::where('event_date', 'like', $month . '%')
                 ->where('status', 'pending')->count(),
             'total_revenue' => BookedHall::where('event_date', 'like', $month . '%')
+                ->whereNull('cancelled_at')
                 ->sum('total_rent'),
             'total_paid' => BookedHall::where('event_date', 'like', $month . '%')
+                ->whereNull('cancelled_at')
                 ->sum('paid_amount')
         ];
 

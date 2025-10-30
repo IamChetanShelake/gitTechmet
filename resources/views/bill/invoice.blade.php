@@ -59,7 +59,7 @@
     <table class="header-table">
         <tr>
             <td class="header-logo-left">
-                <img src="{{ asset('website/assets/Gokhale-logo.png') }}" alt="Gokhale Logo" style="height: 80px; width: 80px;">
+                <img src="{{ public_path('website/assets/Gokhale-logo.png') }}" alt="Gokhale Logo" style="height: 80px; width: 80px;">
             </td>
             <td class="header-center">
                 <p>G. E. Society's</p>
@@ -136,11 +136,15 @@
 
         @php $srNo = 2; @endphp
         @foreach ($accessories as $accessory)
+            @php $price = (float) ($accessory->price ?? 0); $hours = (float) ($accessory->hours ?? 1); @endphp
+            @if($price > 0 && $hours > 0)
+                @php $blocks = floor($totalHours / $hours); $totalPrice = $price * max($blocks, 1); @endphp
         <tr>
             <td>{{ $srNo++ }}</td>
             <td>{{ $accessory->name }}</td>
-            <td>{{ number_format($accessory->price, 2) }}</td>
+            <td>{{ number_format($totalPrice, 2) }}</td>
         </tr>
+            @endif
         @endforeach
 
         <tr>

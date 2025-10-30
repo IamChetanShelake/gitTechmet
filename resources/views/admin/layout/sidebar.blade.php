@@ -253,6 +253,13 @@
             </li>
 
             <li class="nav-item">
+                <a class="nav-link {{ Request::is('cancelled-bookings') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('Cancelled.Bookings')}}">
+                    <i class="material-symbols-rounded opacity-5">event_busy</i>
+                    <span class="nav-link-text ms-1">Cancelled Bookings</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
                 <a class="nav-link {{ Request::is('AdminHallEnquiry') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('AdminHallEnquiry')}}">
                     <i class="material-symbols-rounded opacity-5">help</i>
                     <span class="nav-link-text ms-1">Hall Enquirys</span>

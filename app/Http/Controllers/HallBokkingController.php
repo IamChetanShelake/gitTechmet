@@ -396,6 +396,31 @@ class HallBokkingController extends Controller
         $this->sendWhatsAppCurlRequest($payload);
     }
 
+    public function cancelledBookings()
+    {
+        // Fetch cancelled bookings (excluding event/catering services, just basic booking info)
+        $cancelledBookings = BookedHall::with('paymentTransactions')->whereNotNull('cancelled_at')->get();
+
+        // Add payment status to cancelled bookings
+        foreach ($cancelledBookings as $booking) {
+            $latestTransaction = $booking->paymentTransactions()
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($latestTransaction) {
+                $booking->payment_status = $latestTransaction->status;
+                $booking->payment_amount = $latestTransaction->amount;
+                $booking->payment_date = $latestTransaction->payment_date;
+            } else {
+                $booking->payment_status = 'Not Initiated';
+                $booking->payment_amount = 0;
+                $booking->payment_date = null;
+            }
+        }
+
+        return view('admin.BookedHall.cancelledBookings', compact('cancelledBookings'));
+    }
+
     public function ViewEventCatering($id)
     {
         $eventServices = EventService::where('booked_hall_id', $id)->get();

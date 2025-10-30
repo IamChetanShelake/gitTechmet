@@ -21,7 +21,9 @@ use App\Models\OurFacilite;
 use App\Models\PaymentTransaction;
 use App\Models\Event;
 use App\Models\Video;
+use App\Models\Accessorie;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class WebsiteController extends Controller
 {
@@ -156,7 +158,31 @@ class WebsiteController extends Controller
      */
     private function calculatePaymentStatus($booking, $successfulPayments)
     {
-        $rentAmount = $booking->total_rent ?? 0;
+        $hallRent = $booking->total_rent ?? 0;
+
+        // Calculate total hours from start and end time
+        $startTime = Carbon::createFromFormat('H:i:s', $booking->start_time . ':00');
+        $endTime = Carbon::createFromFormat('H:i:s', $booking->end_time . ':00');
+        $totalHours = $startTime->diffInHours($endTime, false); // false to get positive difference
+
+        // Get accessories if any
+        $accessoriesAmount = 0;
+        if ($booking->enquiry && $booking->enquiry->accessorie) {
+            $accessoryIds = json_decode($booking->enquiry->accessorie, true);
+            if (is_array($accessoryIds)) {
+                $accessories = Accessorie::whereIn('id', $accessoryIds)->get();
+                // Calculate total accessories price based on blocks of hours
+                $accessoriesAmount = $accessories->sum(function ($accessory) use ($totalHours) {
+                    $price = (float) ($accessory->price ?? 0);
+                    $hours = (float) ($accessory->hours ?? 1);
+                    if ($price <= 0 || $hours <= 0) return 0;
+                    $blocks = floor($totalHours / $hours);
+                    return $price * max($blocks, 1); // Minimum 1 block
+                });
+            }
+        }
+
+        $rentAmount = $hallRent + $accessoriesAmount;
         $depositAmount = $booking->total_deposit ?? 0;
         $rentWithGst = $rentAmount * 1.18;
 
@@ -210,13 +236,25 @@ class WebsiteController extends Controller
     {
         $hallRent = $bookedHall->total_rent ?? 0;
 
+        // Calculate total hours from start and end time
+        $startTime = Carbon::createFromFormat('H:i:s', $bookedHall->start_time . ':00');
+        $endTime = Carbon::createFromFormat('H:i:s', $bookedHall->end_time . ':00');
+        $totalHours = $startTime->diffInHours($endTime, false); // false to get positive difference
+
         // Get accessories if any
         $accessoriesAmount = 0;
         if ($bookedHall->enquiry && $bookedHall->enquiry->accessorie) {
             $accessoryIds = json_decode($bookedHall->enquiry->accessorie, true);
             if (is_array($accessoryIds)) {
-                $accessories = \App\Models\Accessorie::whereIn('id', $accessoryIds)->get();
-                $accessoriesAmount = $accessories->sum('price');
+                $accessories = Accessorie::whereIn('id', $accessoryIds)->get();
+                // Calculate total accessories price based on blocks of hours
+                $accessoriesAmount = $accessories->sum(function ($accessory) use ($totalHours) {
+                    $price = (float) ($accessory->price ?? 0);
+                    $hours = (float) ($accessory->hours ?? 1);
+                    if ($price <= 0 || $hours <= 0) return 0;
+                    $blocks = floor($totalHours / $hours);
+                    return $price * max($blocks, 1); // Minimum 1 block
+                });
             }
         }
 

@@ -79,12 +79,47 @@
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Vendors</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Payment Status</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Remaining Amount</th>
-                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Total Amount</th>
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Total Amount </br>(Rent + Deposit)</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($bookedHalls as $index => $bookedHall)
+                            @php
+                                // Calculate total amount first (Hall + Accessories + Deposit)
+                                $totalAmount = ($bookedHall->total_rent ?? 0) + ($bookedHall->total_deposit ?? 0);
+                                if ($bookedHall->start_time && $bookedHall->end_time) {
+                                    $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $bookedHall->start_time . ':00');
+                                    $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $bookedHall->end_time . ':00');
+                                    $totalHours = $startTime->diffInHours($endTime, false);
+
+                                    // Get accessories if any from enquiry
+                                    $accessoriesAmount = 0;
+                                    if ($bookedHall->enquiry && $bookedHall->enquiry->accessorie) {
+                                        $accessoryIds = json_decode($bookedHall->enquiry->accessorie, true);
+                                        if (is_array($accessoryIds)) {
+                                            $accessories = \App\Models\Accessorie::whereIn('id', $accessoryIds)->get();
+                                            // Calculate total accessories price based on blocks of hours
+                                            $accessoriesAmount = $accessories->sum(function ($accessory) use ($totalHours) {
+                                                $price = (float) ($accessory->price ?? 0);
+                                                $hours = (float) ($accessory->hours ?? 1);
+                                                if ($price <= 0 || $hours <= 0) return 0;
+                                                $blocks = floor($totalHours / $hours);
+                                                return $price * max($blocks, 1); // Minimum 1 block
+                                            });
+                                        }
+                                    }
+
+                                    $totalAmount = ($bookedHall->total_rent ?? 0) + $accessoriesAmount + ($bookedHall->total_deposit ?? 0);
+                                }
+
+                                // Calculate remaining amount
+                                $paidAmount = \App\Models\PaymentTransaction::where('booked_hall_id', $bookedHall->id)
+                                    ->where('status', 'SUCCESS')
+                                    ->sum('amount');
+                                $remainingAmount = $totalAmount - $paidAmount;
+                                $remainingAmount = max(0, $remainingAmount);
+                            @endphp
                             <tr>
                                 <!-- Sr No. -->
                                 <td>
@@ -170,14 +205,14 @@
                                 <!-- Remaining Amount -->
                                 <td class="align-middle text-center">
                                     <div class="d-flex px-2 py-1 justify-content-center">
-                                        <h6 class="mb-0 text-sm">₹{{ number_format($bookedHall->remaining_amount ?? 0, 2) }}</h6>
+                                        <h6 class="mb-0 text-sm">₹{{ number_format($remainingAmount, 2) }}</h6>
                                     </div>
                                 </td>
 
                                 <!-- Total Amount -->
                                 <td class="align-middle text-center">
                                     <div class="d-flex px-2 py-1 justify-content-center">
-                                        <h6 class="mb-0 text-sm">₹{{ number_format($bookedHall->total_rent ?? 0, 2) }}</h6>
+                                        <h6 class="mb-0 text-sm">₹{{ number_format($totalAmount, 2) }}</h6>
                                     </div>
                                 </td>
 

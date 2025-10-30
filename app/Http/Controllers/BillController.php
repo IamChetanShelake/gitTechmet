@@ -12,6 +12,7 @@ use App\Models\Accessorie;
 use App\Models\HallEnquiry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Carbon\Carbon;
 
 class BillController extends Controller
 {
@@ -21,13 +22,22 @@ public function generateBill($id)
         // Fetch hall enquiry details
         $enquiry = HallEnquiry::with('halll')->where('id', $id)->firstOrFail();
 
+        // Calculate total hours from start and end time
+        $startTime = Carbon::createFromFormat('H:i:s', $enquiry->start_time . ':00');
+        $endTime = Carbon::createFromFormat('H:i:s', $enquiry->end_time . ':00');
+        $totalHours = $startTime->diffInHours($endTime, false); // false to get positive difference
+
         // Fetch accessories using stored IDs
         $accessoryIds = json_decode($enquiry->accessorie, true); // Convert JSON string to array
         $accessories = Accessorie::whereIn('id', $accessoryIds)->get();
 
-        // Calculate total accessories price (excluding free accessories)
-        $totalAccessoriesPrice = $accessories->sum(function ($accessory) {
-            return $accessory->price ?? 0; // Just add price, no multiplication
+        // Calculate total accessories price based on blocks of hours
+        $totalAccessoriesPrice = $accessories->sum(function ($accessory) use ($totalHours) {
+            $price = (float) ($accessory->price ?? 0);
+            $hours = (float) ($accessory->hours ?? 1);
+            if ($price <= 0 || $hours <= 0) return 0;
+            $blocks = floor($totalHours / $hours);
+            return $price * max($blocks, 1); // Minimum 1 block
         });
 
         // Calculate total amount (Hall Rent + Paid Accessories)
@@ -43,7 +53,7 @@ public function generateBill($id)
         // // return $pdf->download('bill.pdf');
         // return $pdf->stream('bill.pdf');
         $pdf = app(PDF::class);
-        $pdf = $pdf->loadView('bill.invoice', compact('enquiry', 'accessories', 'totalAccessoriesPrice', 'totalAmount', 'gst', 'finalAmount'));
+        $pdf = $pdf->loadView('bill.invoice', compact('enquiry', 'accessories', 'totalAccessoriesPrice', 'totalAmount', 'gst', 'finalAmount', 'totalHours'));
 
         // ✅ Define file name like "quotation_1.pdf"
         $fileName = 'quotation_' . $enquiry->id . '.pdf';

@@ -130,7 +130,7 @@
                     </div>
 
                     <div class="col-md-6">
-                        <p><strong>Rent Amount:</strong> ₹{{ number_format($booking->enquiry->rent_amount, 2) }}</p>
+                        <p><strong>Rent Amount (Including Accessories):</strong> ₹{{ number_format($paymentStatus['rent_amount'], 2) }}</p>
                         <p><strong>GST No:</strong> {{  $booking->enquiry->gst_no ?? 'N/A' }}</p>
                         <p><strong>Address:</strong> {{  $booking->enquiry->address ?? 'N/A' }}</p>
                         <p><strong>Referred By:</strong> {{  $booking->enquiry->referred_by ?? 'N/A' }}</p>

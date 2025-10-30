@@ -493,6 +493,8 @@ Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotat
 
     Route::get('/booked-halls',[HallBokkingController::class, 'index'])->name('Booked.Halls');
 
+    Route::get('/cancelled-bookings', [HallBokkingController::class, 'cancelledBookings'])->name('Cancelled.Bookings');
+
     Route::get('/booked-halls/{id}',[HallBokkingController::class, 'view'])->name('View.Booking');
 
     Route::get('/ViewEventCatering/{id}', [HallBokkingController::class, 'ViewEventCatering'])->name('View.EventCatering');
