@@ -93,9 +93,65 @@
                                     <img src="{{ asset('sign_images/' . $hallenquirie->sign_image) }}" alt="Sign Image"
                                         style="max-width: 200px;">
                                 </div>
+                            @elseif($hallenquirie->typed_signature)
+                                <p>{{ $hallenquirie->typed_signature }}</p>
                             @else
                                 <p>No sign image uploaded.</p>
                             @endif
+                        </div>
+
+                        <!-- Office Details and Accessories for Print -->
+                        @if ($hallenquirie->status != 'pending')
+                        <div class="row g-4 mt-4">
+                            <!-- Office Details - Left Column -->
+                            <div class="col-md-6">
+                                <p class="fw-bold mb-2 text-uppercase">Office Details</p>
+                                <div class="border rounded p-3">
+                                    <p><strong>Rent Amount:</strong> {{ $hallenquirie->rent_amount ?? 'Not Set' }}</p>
+                                    <p><strong>Total Deposit:</strong> {{ $hallenquirie->deposit ?? 'Not Set' }}</p>
+                                    <p><strong>Special Note:</strong> {{ $hallenquirie->special_note ?? 'Not Set' }}</p>
+                                    <p><strong>ID Proof:</strong> {{ $hallenquirie->id_proof ?? 'Not Set' }}</p>
+                                    <p><strong>Event Setup:</strong> {{ $hallenquirie->event_setup ?? 'Not Set' }}</p>
+                                    <p><strong>Stage Chairs Count:</strong> {{ $hallenquirie->stage_chairs_count ?? 'N/A' }}</p>
+                                    <p><strong>Hall Chairs Count:</strong> {{ $hallenquirie->hall_chairs_count ?? 'N/A' }}</p>
+                                    @php
+                                        $vendor_services = json_decode($hallenquirie->vendor, true) ?? [];
+                                    @endphp
+                                    <p><strong>Vendor Services:</strong>
+                                        {{ $hallenquirie->vendor ? implode(', ', json_decode($hallenquirie->vendor, true)) : 'N/A' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Accessories - Right Column -->
+                            <div class="col-md-6">
+                                <p class="fw-bold mb-2 text-uppercase">Accessories</p>
+                                <div class="border rounded p-3">
+                                    @php
+                                        $selected_accessories = json_decode($hallenquirie->accessorie, true) ?? [];
+                                        $accessory_names = [];
+                                        if (!empty($selected_accessories)) {
+                                            $accessory_names = \App\Models\Accessorie::whereIn('id', $selected_accessories)
+                                                ->pluck('name')
+                                                ->toArray();
+                                        }
+                                    @endphp
+
+                                    @if (!empty($accessory_names))
+                                        @foreach ($accessory_names as $accessory)
+                                            <strong>{{ $accessory }}</strong><br>
+                                        @endforeach
+                                    @else
+                                        <strong>No accessories selected</strong>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <div class="mt-4 d-none d-print-block">
+                            <p>Enquiry Date:- {{ $hallenquirie->created_at }}</p>
+                            <p>Attended By :- _______________</p>
                         </div>
 
                         <!-- Print-only Footer -->
@@ -389,32 +445,42 @@
                 myWindow.document.write('<html><head><title>Print Preview</title>');
                 myWindow.document.write(`
             <style>
+                @page {
+                    size: A4;
+                    margin: 0.5in;
+                }
                 body {
                     font-family: Arial, sans-serif;
-                    margin: 20px;
+                    margin: 0;
+                    padding: 20px;
                     color: #333;
+                    font-size: 12px;
+                }
+                #printableArea {
+                    page-break-inside: avoid;
                 }
                 .border {
                     border: 1px solid #ccc;
-                    padding: 10px;
-                    margin-bottom: 15px;
+                    padding: 8px;
+                    margin-bottom: 10px;
                     border-radius: 4px;
+                    page-break-inside: avoid;
                 }
                 p {
-                    margin: 5px 0;
-                    font-size: 14px;
+                    margin: 4px 0;
+                    font-size: 12px;
                 }
                 .fw-bold {
                     font-weight: bold;
                     text-transform: uppercase;
                 }
                 .p-3 {
-                    padding: 1rem;
+                    padding: 0.5rem;
                 }
                 .badge {
-                    padding: 5px 10px;
+                    padding: 3px 6px;
                     border-radius: 4px;
-                    font-size: 12px;
+                    font-size: 10px;
                     color: #fff;
                     display: inline-block;
                 }
@@ -424,8 +490,19 @@
                 img {
                     width: auto;
                     height: auto;
-                    max-width: 100%;
+                    max-height: 100px;
                     vertical-align: top;
+                }
+                .row {
+                    display: flex;
+                    margin: 0 -10px;
+                }
+                .col-md-6 {
+                    flex: 1;
+                    padding: 0 10px;
+                }
+                h3, h4, h5 {
+                    font-size: 16px;
                 }
             </style>
         `);

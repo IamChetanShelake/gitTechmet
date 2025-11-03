@@ -136,9 +136,27 @@
             </div>
         </div>
 
-        <!-- Add Button -->
-        <div class="d-flex justify-content-end px-3">
-            {{-- <a class="btn btn-outline-primary btn-lg px-4 py-2" href="{{ route('admin.hall-enquiry.create') }}">Add</a> --}}
+        <!-- Export Section -->
+        <div class="d-flex justify-content-end px-3 mb-3">
+            <div class="btn-group" role="group">
+                <button id="exportDropdown" type="button" class="btn btn-success btn-lg px-4 py-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-download"></i> Export Reports
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'all') }}">
+                        <i class="fas fa-file-excel"></i> All Time Report
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'weekly') }}">
+                        <i class="fas fa-calendar-week"></i> Weekly Report
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'monthly') }}">
+                        <i class="fas fa-calendar-alt"></i> Monthly Report
+                    </a></li>
+                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'yearly') }}">
+                        <i class="fas fa-calendar"></i> Yearly Report
+                    </a></li>
+                </ul>
+            </div>
         </div>
 
         <!-- Table Section -->
@@ -188,13 +206,13 @@
                                     </a>
                                 </td>
 
-                                <!-- Action (Delete) -->
+                                <!-- Action (Cancel Enquiry) -->
                                 <td class="align-middle text-center">
-                                    <form action="{{ route('admin.hall-enquiry.destroy', $hallenquirie->id) }}" method="POST" style="display:inline;">
+                                    <form action="{{ route('admin.hall-enquiry.cancel', $hallenquirie->id) }}" method="POST" style="display:inline;">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this hall enquiry?')">
-                                            Delete
+                                        <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to cancel this hall enquiry?')">
+                                            Cancel Enquiry
                                         </button>
                                     </form>
                                 </td>

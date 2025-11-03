@@ -10,6 +10,7 @@ use App\Models\EventService;
 use Illuminate\Http\Request;
 use App\Models\CateringService;
 use App\Models\PaymentTransaction;
+use Illuminate\Support\Facades\Log;
 
 class HallBokkingController extends Controller
 {
@@ -162,7 +163,7 @@ class HallBokkingController extends Controller
         curl_close($ch);
 
         // 📝 Log everything
-        \Log::info("📤 WhatsApp Message Sent", [
+        Log::info("📤 WhatsApp Message Sent", [
             'contact' => $contactNumber,
             'code' => $httpCode,
             'response' => $response,
@@ -171,9 +172,9 @@ class HallBokkingController extends Controller
         ]);
 
         if ($httpCode == 200) {
-            \Log::info("✅ WhatsApp confirmation sent to {$contactNumber}.");
+            Log::info("✅ WhatsApp confirmation sent to {$contactNumber}.");
         } else {
-            \Log::error("❌ WhatsApp message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
+            Log::error("❌ WhatsApp message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
         }
     }
 
@@ -182,7 +183,7 @@ class HallBokkingController extends Controller
         $vendorsSelected = json_decode($hallenquiry->vendor, true) ?? [];
 
         if (empty($vendorsSelected)) {
-            \Log::info("🚫 No vendors selected for enquiry ID {$hallenquiry->id}");
+            Log::info("🚫 No vendors selected for enquiry ID {$hallenquiry->id}");
             return;
         }
 
@@ -245,7 +246,7 @@ class HallBokkingController extends Controller
         $curlError = curl_error($ch);
         curl_close($ch);
 
-        \Log::info("📩 Vendor WhatsApp Message", [
+        Log::info("📩 Vendor WhatsApp Message", [
             'payload' => $payloadArray,
             'response' => $response,
             'http_code' => $httpCode,
@@ -253,9 +254,9 @@ class HallBokkingController extends Controller
         ]);
 
         if ($httpCode == 200) {
-            \Log::info("✅ Message sent to vendor successfully.");
+            Log::info("✅ Message sent to vendor successfully.");
         } else {
-            \Log::error("❌ Failed to send message to vendor. HTTP {$httpCode} - {$response}");
+            Log::error("❌ Failed to send message to vendor. HTTP {$httpCode} - {$response}");
         }
     }
 
@@ -290,14 +291,14 @@ class HallBokkingController extends Controller
         // Determine the service type and fetch related booked hall
         $bookedHall = BookedHall::find($service->booked_hall_id);
         if (!$bookedHall) {
-            \Log::error("❌ No booked hall found for service ID {$service->id}");
+            Log::error("❌ No booked hall found for service ID {$service->id}");
             return;
         }
 
         // Fetch hall enquiry to get hall name and event date
         $hallEnquiry = HallEnquiry::find($bookedHall->hall_enquiry_id);
         if (!$hallEnquiry) {
-            \Log::error("❌ No hall enquiry found for booked hall ID {$bookedHall->id}");
+            Log::error("❌ No hall enquiry found for booked hall ID {$bookedHall->id}");
             return;
         }
 
@@ -308,7 +309,7 @@ class HallBokkingController extends Controller
         $vendors = \App\Models\User::where('role', $vendorRole)->get();
 
         if ($vendors->isEmpty()) {
-            \Log::info("🚫 No vendors found for role {$vendorRole} for service ID {$service->id}");
+            Log::info("🚫 No vendors found for role {$vendorRole} for service ID {$service->id}");
             return;
         }
 
@@ -351,14 +352,14 @@ class HallBokkingController extends Controller
         // Fetch related booked hall
         $bookedHall = BookedHall::find($service->booked_hall_id);
         if (!$bookedHall) {
-            \Log::error("❌ No booked hall found for service ID {$service->id}");
+            Log::error("❌ No booked hall found for service ID {$service->id}");
             return;
         }
 
         // Fetch hall enquiry to get customer details, hall name, and event date
         $hallEnquiry = HallEnquiry::find($bookedHall->hall_enquiry_id);
         if (!$hallEnquiry) {
-            \Log::error("❌ No hall enquiry found for booked hall ID {$bookedHall->id}");
+            Log::error("❌ No hall enquiry found for booked hall ID {$bookedHall->id}");
             return;
         }
 
@@ -398,10 +399,10 @@ class HallBokkingController extends Controller
 
     public function cancelledBookings()
     {
-        // Fetch cancelled bookings (excluding event/catering services, just basic booking info)
+        // Fetch cancelled bookings
         $cancelledBookings = BookedHall::with('paymentTransactions')->whereNotNull('cancelled_at')->get();
 
-        // Add payment status to cancelled bookings
+        // Add payment status and type to cancelled bookings
         foreach ($cancelledBookings as $booking) {
             $latestTransaction = $booking->paymentTransactions()
                 ->orderBy('created_at', 'desc')
@@ -416,9 +417,27 @@ class HallBokkingController extends Controller
                 $booking->payment_amount = 0;
                 $booking->payment_date = null;
             }
+            $booking->record_type = 'Booking';
         }
 
-        return view('admin.BookedHall.cancelledBookings', compact('cancelledBookings'));
+        // Fetch cancelled enquiries
+        $cancelledEnquiries = HallEnquiry::whereNotNull('cancelled_at')->get();
+
+        // Add type to cancelled enquiries
+        foreach ($cancelledEnquiries as $enquiry) {
+            $enquiry->record_type = 'Enquiry';
+            $enquiry->payment_status = 'N/A';
+            $enquiry->payment_amount = 0;
+            $enquiry->payment_date = null;
+        }
+
+        // Combine both collections
+        $cancelledRecords = $cancelledBookings->concat($cancelledEnquiries);
+
+        // Sort by cancelled_at date (most recent first)
+        $cancelledRecords = $cancelledRecords->sortByDesc('cancelled_at');
+
+        return view('admin.BookedHall.cancelledBookings', compact('cancelledRecords'));
     }
 
     public function ViewEventCatering($id)
@@ -462,7 +481,7 @@ class HallBokkingController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Booking cancelled successfully.']);
         } catch (\Exception $e) {
-            \Log::error('Error cancelling booking: ' . $e->getMessage());
+            Log::error('Error cancelling booking: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to cancel booking. Please try again.']);
         }
     }

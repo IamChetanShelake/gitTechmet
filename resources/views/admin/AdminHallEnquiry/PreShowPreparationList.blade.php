@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta http-equiv="Content-Language" content="mr,en">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pre Show Preparation List</title>
     <style>
@@ -133,6 +135,36 @@
 
         <p><strong>Catering Setup Requirements:</strong>
             @if($has_catering)
+                Yes
+            @else
+                No
+            @endif
+        </p>
+
+        @php
+            $selected_accessories = json_decode($hallenquirie->accessorie, true) ?? [];
+            $accessory_names = [];
+            if (!empty($selected_accessories)) {
+                $accessory_names = \App\Models\Accessorie::whereIn('id', $selected_accessories)->pluck('name')->toArray();
+            }
+
+            // Check if Sound Setup is selected
+            $has_sound_setup = in_array('Sound Setup', $accessory_names);
+
+            // Check if Cleaning is selected
+            $has_cleaning = in_array('Cleaning', $accessory_names);
+        @endphp
+
+        <p><strong>Sound Setup:</strong>
+            @if($has_sound_setup)
+                Yes
+            @else
+                No
+            @endif
+        </p>
+
+        <p><strong>Cleaning:</strong>
+            @if($has_cleaning)
                 Yes
             @else
                 No

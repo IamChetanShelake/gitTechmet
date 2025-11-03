@@ -41,12 +41,13 @@
 
         <!-- Table Section -->
         <div class="card-body px-0 pb-2">
-            @if($cancelledBookings->count() > 0)
+            @if($cancelledRecords->count() > 0)
                 <div class="table-responsive p-0">
                     <table class="table align-items-center mb-0">
                         <thead>
                             <tr>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Sr No.</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Type</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Customer Name</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Hall Name</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Event Date</th>
@@ -56,60 +57,71 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($cancelledBookings as $index => $booking)
+                            @foreach($cancelledRecords as $index => $record)
                                 <tr>
                                     <!-- Sr No. -->
                                     <td>
                                         <div class="d-flex px-2 py-1">
-                                            <h6 class="mb-0 text-sm">{{ $index + 1 }}</h6>
+                                            <h6 class="mb-0 text-sm">{{ $cancelledRecords->count() - $index }}</h6>
+                                        </div>
+                                    </td>
+
+                                    <!-- Type -->
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            @if($record->record_type == 'Booking')
+                                                <span class="badge bg-primary">Booking</span>
+                                            @else
+                                                <span class="badge bg-info">Enquiry</span>
+                                            @endif
                                         </div>
                                     </td>
 
                                     <!-- Customer Name -->
                                     <td>
                                         <div class="d-flex px-2 py-1">
-                                            <h6 class="mb-0 text-sm">{{ $booking->customer_name }}</h6>
+                                            <h6 class="mb-0 text-sm">{{ $record->name ?? $record->customer_name }}</h6>
                                         </div>
                                     </td>
 
                                     <!-- Hall Name -->
                                     <td>
                                         <div class="d-flex px-2 py-1">
-                                            <h6 class="mb-0 text-sm">{{ $booking->hall_name }}</h6>
+                                            <h6 class="mb-0 text-sm">{{ $record->hall ?? $record->hall_name }}</h6>
                                         </div>
                                     </td>
 
                                     <!-- Event Date -->
                                     <td class="align-middle text-center">
                                         <div class="d-flex px-2 py-1 justify-content-center">
-                                            <h6 class="mb-0 text-sm">{{ $booking->event_date ? \Carbon\Carbon::parse($booking->event_date)->format('d M Y') : 'N/A' }}</h6>
+                                            <h6 class="mb-0 text-sm">{{ $record->event_date ? \Carbon\Carbon::parse($record->event_date)->format('d M Y') : 'N/A' }}</h6>
                                         </div>
                                     </td>
 
                                     <!-- Cancelled Date -->
                                     <td class="align-middle text-center">
                                         <div class="d-flex px-2 py-1 justify-content-center">
-                                            <h6 class="mb-0 text-sm">{{ $booking->cancelled_at ? \Carbon\Carbon::parse($booking->cancelled_at)->format('d M Y') : 'N/A' }}</h6>
-                                            <small class="text-muted">{{ $booking->cancelled_at ? \Carbon\Carbon::parse($booking->cancelled_at)->format('h:i A') : '' }}</small>
+                                            <h6 class="mb-0 text-sm">{{ $record->cancelled_at ? \Carbon\Carbon::parse($record->cancelled_at)->format('d M Y') : 'N/A' }}</h6>
+                                            <small class="text-muted">{{ $record->cancelled_at ? \Carbon\Carbon::parse($record->cancelled_at)->format('h:i A') : '' }}</small>
                                         </div>
                                     </td>
 
                                     <!-- Payment Status -->
                                     <td class="align-middle text-center">
-                                        @if($booking->payment_status == 'SUCCESS')
+                                        @if($record->payment_status == 'SUCCESS')
                                             <span class="badge bg-success px-3 py-2">
                                                 <i class="fas fa-check-circle me-1"></i>
-                                                Paid (₹{{ number_format($booking->payment_amount ?? 0, 2) }})
+                                                Paid (₹{{ number_format($record->payment_amount ?? 0, 2) }})
                                             </span>
-                                            @if($booking->payment_date)
-                                                <br><small class="text-muted">{{ $booking->payment_date->format('d M Y') }}</small>
+                                            @if($record->payment_date)
+                                                <br><small class="text-muted">{{ $record->payment_date->format('d M Y') }}</small>
                                             @endif
-                                        @elseif($booking->payment_status == 'FAILED')
+                                        @elseif($record->payment_status == 'FAILED')
                                             <span class="badge bg-danger px-3 py-2">
                                                 <i class="fas fa-times-circle me-1"></i>
                                                 Failed
                                             </span>
-                                        @elseif($booking->payment_status == 'PENDING' || $booking->payment_status == 'initiated')
+                                        @elseif($record->payment_status == 'PENDING' || $record->payment_status == 'initiated')
                                             <span class="badge bg-warning px-3 py-2">
                                                 <i class="fas fa-clock me-1"></i>
                                                 Pending
@@ -117,16 +129,22 @@
                                         @else
                                             <span class="badge bg-secondary px-3 py-2">
                                                 <i class="fas fa-exclamation-triangle me-1"></i>
-                                                Not Initiated
+                                                {{ $record->payment_status }}
                                             </span>
                                         @endif
                                     </td>
 
                                     <!-- Actions -->
                                     <td class="align-middle text-center">
-                                        <a href="{{ route('View.Booking', $booking->id) }}" class="btn btn-info btn-sm" title="View Details">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
+                                        @if($record->record_type == 'Booking')
+                                            <a href="{{ route('View.Booking', $record->id) }}" class="btn btn-info btn-sm" title="View Details">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        @else
+                                            <a href="{{ route('Admin.ViewHallEnquiry', $record->id) }}" class="btn btn-info btn-sm" title="View Details">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

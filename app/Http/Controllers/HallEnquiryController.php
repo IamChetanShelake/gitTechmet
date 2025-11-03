@@ -13,6 +13,7 @@ use App\Models\HallEnquiry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Exports\HallEnquiryExport;
 
 
 class HallEnquiryController extends Controller
@@ -255,7 +256,9 @@ class HallEnquiryController extends Controller
 
     public function index()
     {
-        $hallenquiries = HallEnquiry::whereIn('status', ['Viewed', 'pending'])->get();
+        $hallenquiries = HallEnquiry::whereIn('status', ['Viewed', 'pending'])
+                                   ->whereNull('cancelled_at')
+                                   ->get();
         return view('admin.AdminHallEnquiry.HallEnquiryTable', compact('hallenquiries'));
     }
 
@@ -291,12 +294,13 @@ class HallEnquiryController extends Controller
 
         }
 
-    public function destroy($id)
+    public function cancel($id)
     {
         $hallEnquiry = HallEnquiry::findOrFail($id);
-        $hallEnquiry->delete();
+        $hallEnquiry->cancelled_at = now();
+        $hallEnquiry->save();
 
-        return redirect()->route('AdminHallEnquiry')->with('success', 'Hall enquiry deleted successfully.');
+        return redirect()->route('AdminHallEnquiry')->with('success', 'Hall enquiry cancelled successfully.');
     }
 
     public function preShowStream($id)
@@ -305,6 +309,27 @@ class HallEnquiryController extends Controller
         $pdf = app(PDF::class);
         $pdf = $pdf->loadView('admin.AdminHallEnquiry.PreShowPreparationList', compact('hallenquirie'));
         return $pdf->stream('Pre_Show_Preparation_List.pdf');
+    }
+
+    public function exportExcel($period = 'all')
+    {
+        $filename = 'hall_enquiries_report';
+
+        switch ($period) {
+            case 'weekly':
+                $filename .= '_weekly.xlsx';
+                break;
+            case 'monthly':
+                $filename .= '_monthly.xlsx';
+                break;
+            case 'yearly':
+                $filename .= '_yearly.xlsx';
+                break;
+            default:
+                $filename .= '_all.xlsx';
+        }
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new HallEnquiryExport($period), $filename);
     }
 
 

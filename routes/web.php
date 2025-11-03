@@ -363,7 +363,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/AdminStroreOffice/{id}', [HallEnquiryController::class,'storeOffice'])->name('Admin.StoreOffice');
     Route::get('/admin/pre-show/stream/{id}', [HallEnquiryController::class, 'preShowStream'])->name('admin.pre.show.stream');
-    Route::delete('/AdminHallEnquiry/destroy/{id}', [HallEnquiryController::class,'destroy'])->name('admin.hall-enquiry.destroy');
+    Route::delete('/AdminHallEnquiry/cancel/{id}', [HallEnquiryController::class,'cancel'])->name('admin.hall-enquiry.cancel');
+    Route::get('/admin/hall-enquiries/export/{period?}', [HallEnquiryController::class, 'exportExcel'])->name('admin.hall-enquiries.export');
 
 
     //Admin hall enquiry Routes--------------------------------------------------------------------------------------------------------------

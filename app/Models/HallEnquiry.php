@@ -30,6 +30,7 @@ class HallEnquiry extends Model
         'expected_audience',
         'stage_chairs_count',
         'hall_chairs_count',
+        'cancelled_at',
     ];
 
     // Relationship with Hall

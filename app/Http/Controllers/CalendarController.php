@@ -68,7 +68,7 @@ class CalendarController extends Controller
 
         // Get hall enquiries
         $enquiries = HallEnquiry::whereBetween('event_date', [$start, $end])
-            ->where('status', '!=', 'cancelled')
+            ->whereNull('cancelled_at')
             ->whereNotIn('id', BookedHall::pluck('hall_enquiry_id'))
             ->get();
 
