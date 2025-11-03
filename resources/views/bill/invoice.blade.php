@@ -88,6 +88,8 @@
     <p><strong>Type of Event:</strong> {{ $enquiry->event_type }}</p>
     {{-- <p><strong>Hall Name:</strong> {{ $enquiry->hall ?? 'N/A' }}</p> --}}
 
+    <p><strong>Generated on:</strong> {{ date('d-m-Y H:i:s') }}</p>
+
     <table>
         <tr>
             <th>Sr. No.</th>
