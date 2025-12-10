@@ -17,7 +17,7 @@ class VideoController extends Controller
         $request->validate([
             'title' => 'nullable|string|max:255',
             'youtube_url' => 'required|url',
-            'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240'
         ]);
 
         $video = new Video();

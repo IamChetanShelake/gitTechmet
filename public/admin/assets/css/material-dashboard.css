@@ -3118,7 +3118,7 @@ textarea.form-control-lg {
   height: 1.23em;
   margin-top: 0.135em;
   vertical-align: top;
-  appearance: none;
+  /* appearance: none; */
   background-color: var(--bs-form-check-bg);
   background-image: var(--bs-form-check-bg-image);
   background-repeat: no-repeat;
@@ -23877,11 +23877,11 @@ body.dark-version {
   font-weight: 400;
 }
 
-.form-check-input {
+/* .form-check-input {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-}
+} */
 
 .form-switch .form-check-input {
   position: relative;

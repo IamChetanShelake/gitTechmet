@@ -33,13 +33,14 @@
 
                 <div class="mb-3">
                     <label for="thumbnail" class="form-label fw-bold">Video Thumbnail</label>
-                    <input type="file" name="thumbnail" class="form-control border rounded-3 shadow-sm ps-3" accept="image/*" required>
+                    <input type="file" name="thumbnail" id="thumbnail" class="form-control border rounded-3 shadow-sm ps-3" accept="image/*" required>
                     @error('thumbnail')
                     <span class="invalid-feedback d-block">
                         {{$message}}
                     </span>
                     @enderror
-                    <small class="form-text text-muted">Upload a thumbnail image for the video (JPEG, PNG, GIF)</small>
+                    <small class="form-text text-muted">Upload a thumbnail image for the video (JPEG, PNG, GIF) - Maximum file size: 2MB</small>
+                    <div id="file-size-error" class="text-danger mt-2" style="display: none;"></div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
@@ -50,6 +51,33 @@
         </div>
     </div>
 
+    <script>
+        document.getElementById('thumbnail').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+            const errorDiv = document.getElementById('file-size-error');
+
+            if (file && file.size > maxSize) {
+                errorDiv.textContent = 'File size exceeds 2MB. Please choose a smaller image.';
+                errorDiv.style.display = 'block';
+                e.target.value = ''; // Clear the file input
+            } else {
+                errorDiv.style.display = 'none';
+            }
+        });
+
+        // Also disable form submission if file is too large
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const fileInput = document.getElementById('thumbnail');
+            const file = fileInput.files[0];
+            const maxSize = 2 * 1024 * 1024; // 2MB
+
+            if (file && file.size > maxSize) {
+                e.preventDefault();
+                alert('Cannot upload file larger than 2MB. Please resize the image and try again.');
+            }
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 @endsection

@@ -94,7 +94,93 @@ class WebsiteController extends Controller
         $pages= Page::get();
         $contacts = Contact::all();
         $halls = Hall::all();
-        return view('website.enquiry',compact('pages','contacts','halls'));
+
+        // Map hall names to their specific rule files with flexible matching
+        $hallRulesMapping = [
+            'Gurudakshina' => 'Rules and Regulations for Gurudakshina.txt',
+            'Palash Hall' => 'Rules and Regulations for Palash Ha.txt',
+            'Prin. T.A. Kulkarni Hall' => 'Rules and Regulations for Prin. T..txt',
+            'Sharman Hall' => 'Rules and Regulations for Sharman H.txt',
+            'Varanya Hall' => 'Rules and Regulations for Varanya.txt',
+            'Varenya' => 'Rules and Regulations for Varanya.txt',
+            'Dr. Sunadatai M. Gosavi Art Gallery' => 'DR. SUNADATAI M. GOSAVI ART GALLERY.txt',
+            'Dr. Sundatai M. Gosavi Art Gallery' => 'DR. SUNADATAI M. GOSAVI ART GALLERY.txt',
+            // Direct mappings for the exact database names from error feedback
+            'Rules and Regulations for Varenya' => 'Rules and Regulations for Varanya.txt',
+            'Rules and Regulations for Dr. Sundatai M. Gosavi Art Gallery' => 'DR. SUNADATAI M. GOSAVI ART GALLERY.txt',
+            // Mappings for print-specific hall names found in enquiries table
+            'Gurudakshina Auditorium Hall' => 'Rules and Regulations for Gurudakshina.txt',
+            'New Prin. T.A. Kulkarni Hall' => 'Rules and Regulations for Prin. T..txt',
+            'Palash' => 'Rules and Regulations for Palash Ha.txt',
+            'Sharman' => 'Rules and Regulations for Sharman H.txt',
+        ];
+
+        // Function to find the best matching rule file for a hall name
+        $findRuleFile = function($hallName) use ($hallRulesMapping) {
+            // First try exact match (case sensitive)
+            if (isset($hallRulesMapping[$hallName])) {
+                $filePath = base_path($hallRulesMapping[$hallName]);
+                if (file_exists($filePath)) {
+                    return $hallRulesMapping[$hallName];
+                }
+            }
+
+            // Try case-insensitive exact matches
+            foreach ($hallRulesMapping as $key => $file) {
+                if (strcasecmp($hallName, $key) === 0) {
+                    $filePath = base_path($file);
+                    if (file_exists($filePath)) {
+                        return $file;
+                    }
+                }
+            }
+
+            // Try partial matches (contains)
+            $hallNameLower = strtolower($hallName);
+            foreach ($hallRulesMapping as $key => $file) {
+                $keyLower = strtolower($key);
+                if (strpos($hallNameLower, $keyLower) !== false ||
+                    strpos($keyLower, $hallNameLower) !== false) {
+                    $filePath = base_path($file);
+                    if (file_exists($filePath)) {
+                        return $file;
+                    }
+                }
+            }
+
+            // Try word-based matching for key terms
+            $hallWords = explode(' ', $hallNameLower);
+            foreach ($hallRulesMapping as $key => $file) {
+                $keyWords = explode(' ', strtolower($key));
+                $intersection = array_intersect($hallWords, $keyWords);
+                if (count($intersection) > 0) {
+                    $filePath = base_path($file);
+                    if (file_exists($filePath)) {
+                        return $file;
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        // Load rules content for each hall
+        $hallRules = [];
+        foreach ($halls as $hall) {
+            $fileName = $findRuleFile($hall->name);
+            if ($fileName) {
+                $filePath = base_path($fileName);
+                if (file_exists($filePath)) {
+                    $hallRules[$hall->name] = file_get_contents($filePath);
+                } else {
+                    $hallRules[$hall->name] = 'Rules and regulations file not found.';
+                }
+            } else {
+                $hallRules[$hall->name] = 'Rules and regulations file not found.';
+            }
+        }
+
+        return view('website.enquiry', compact('pages', 'contacts', 'halls', 'hallRules'));
     }
 
     public function legal($id){
@@ -200,14 +286,29 @@ class WebsiteController extends Controller
         ];
 
         foreach ($successfulPayments as $payment) {
+            // Map CASH/CHECK payments to appropriate types for display
+            $displayType = $payment->transaction_type;
+            if ($payment->transaction_type === 'CASH' || $payment->transaction_type === 'CHECK') {
+                // For manual payments, determine type based on amount
+                if ($payment->amount <= $depositAmount + 100) { // Allow some tolerance
+                    $displayType = 'deposit';
+                } elseif ($payment->amount >= $rentWithGst - 100) { // Allow some tolerance
+                    $displayType = 'full';
+                } else {
+                    $displayType = 'partial';
+                }
+            }
+
             $status['paid_transactions'][] = [
-                'type' => $payment->transaction_type,
+                'type' => $displayType,
                 'amount' => $payment->amount,
                 'date' => $payment->payment_date,
-                'transaction_id' => $payment->merchant_txn_no
+                'transaction_id' => $payment->merchant_txn_no,
+                'original_type' => $payment->transaction_type // Keep original type for reference
             ];
 
-            switch ($payment->transaction_type) {
+            // Handle payment logic based on display type
+            switch ($displayType) {
                 case 'deposit':
                     $status['deposit_paid'] = true;
                     $status['remaining_deposit'] = max(0, $status['remaining_deposit'] - $payment->amount);
@@ -222,6 +323,21 @@ class WebsiteController extends Controller
                     $status['full_paid'] = true;
                     $status['remaining_deposit'] = 0;
                     $status['remaining_rent'] = 0;
+                    break;
+                case 'partial':
+                    // For partial payments, apply to remaining amounts
+                    $remainingTotal = $status['remaining_deposit'] + $status['remaining_rent'];
+                    if ($remainingTotal > 0) {
+                        $paymentApplied = min($payment->amount, $remainingTotal);
+                        $depositPortion = min($status['remaining_deposit'], $paymentApplied);
+                        $rentPortion = $paymentApplied - $depositPortion;
+
+                        $status['remaining_deposit'] = max(0, $status['remaining_deposit'] - $depositPortion);
+                        $status['remaining_rent'] = max(0, $status['remaining_rent'] - $rentPortion);
+
+                        if ($status['remaining_deposit'] == 0) $status['deposit_paid'] = true;
+                        if ($status['remaining_rent'] == 0) $status['rent_paid'] = true;
+                    }
                     break;
             }
         }

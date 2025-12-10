@@ -31,30 +31,58 @@
                                     <td>{{ $eventBooking->customer_email ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
-                                    <th>Event Date</th>
-                                    <td>{{ $eventBooking->event_date ?? 'N/A' }}</td>
+                                    <th>Event Date{{ isset($eventBooking->all_event_dates) && count($eventBooking->all_event_dates) > 1 ? 's' : '' }}</th>
+                                    <td>
+                                        @if(isset($eventBooking->all_event_dates) && count($eventBooking->all_event_dates) > 0)
+                                            {{ implode(', ', $eventBooking->all_event_dates) }}
+                                            @if(count($eventBooking->all_event_dates) > 1)
+                                                ({{ count($eventBooking->all_event_dates) }} dates)
+                                            @endif
+                                        @else
+                                            {{ $eventBooking->event_date ?? 'N/A' }}
+                                        @endif
+                                    </td>
                                 </tr>
                                 {{-- <tr> <th>Event Time</th> <td>{{ $eventBooking->event_time ?? 'N/A' }}</td> </tr> --}}
                                 <tr>
                                     <th>Event Type</th>
                                     <td>{{ $eventBooking->event_type ?? 'N/A' }}</td>
                                 </tr>
+                                @if(isset($eventBooking->hall_timing_info) && count($eventBooking->hall_timing_info) > 0)
+                                    @foreach($eventBooking->hall_timing_info as $hallInfo)
+                                    <tr>
+                                        <th>{{ $hallInfo['hall_name'] }}</th>
+                                        <td>
+                                            @if(count($hallInfo['dates_times']) > 0)
+                                                @foreach($hallInfo['dates_times'] as $dateTime)
+                                                <div style="margin-bottom: 8px; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px;">
+                                                    <strong>Date:</strong> {{ $dateTime['event_date'] ?? 'N/A' }}<br>
+                                                    <strong>Time:</strong> {{ $dateTime['start_time'] ?? 'N/A' }} - {{ $dateTime['end_time'] ?? 'N/A' }}<br>
+                                                    <small><strong>Duration:</strong> {{ $dateTime['duration'] ?? 'N/A' }}</small>
+                                                </div>
+                                                @endforeach
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                @else
                                 <tr>
                                     <th>Hall Name</th>
                                     <td>{{ $eventBooking->hall_name ?? 'N/A' }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Date</th>
+                                    <td>{{ implode(', ', $eventBooking->all_event_dates ?? []) }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Time</th>
+                                    <td>{{ $eventBooking->start_time ?? 'N/A' }} - {{ $eventBooking->end_time ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
                                     <th>Duration</th>
                                     <td>{{ $eventBooking->duration ?? 'N/A' }}</td>
                                 </tr>
-                                <tr>
-                                    <th>Start Time</th>
-                                    <td>{{ $eventBooking->start_time ?? 'N/A' }}</td>
-                                </tr>
-                                <tr>
-                                    <th>End Time</th>
-                                    <td>{{ $eventBooking->end_time ?? 'N/A' }}</td>
-                                </tr>
+                                @endif
 
                             </tbody>
                         </table>

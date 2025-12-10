@@ -73,6 +73,7 @@ Route::get('/legal-page/{id}',[WebsiteController::class,'legal'])->name('legal.p
 Route::get('/event/{id}', [WebsiteController::class, 'eventDetail'])->name('event.detail');
 
 Route::post('/enquiry/store', [HallEnquiryController::class, 'store'])->name('enquiry.store');
+Route::get('/rules-print/{id}', [HallEnquiryController::class, 'viewRulesPrint'])->name('rules.print.view');
 
 Route::get('/hall/{id}/privacy-policy', [WebsiteController::class, 'privacyPolicy'])->name('HallPage.Privacy');
 // Route::get('/book_now/{booking_code?}', [WebsiteController::class, 'book_now'])->name('Booknow.Page');
@@ -83,6 +84,7 @@ Route::post('/payment/initiate/{bookingId}', [PaymentController::class, 'initiat
 Route::post('/payment/response', [PaymentController::class, 'handleResponse'])->name('payment.response');
 Route::get('/payment/status/{merchantTxnNo}', [PaymentController::class, 'checkStatus'])->name('payment.status');
 Route::post('/payment/refund/{merchantTxnNo}', [PaymentController::class, 'refundTransaction'])->name('payment.refund');
+Route::post('/payment/record-cash-payment/{bookingId}', [PaymentController::class, 'recordCashPayment'])->name('payment.record.cash');
 
 
 
@@ -360,8 +362,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/AdminHallEnquiry', [HallEnquiryController::class, 'index'])->name('AdminHallEnquiry');
     Route::get('/ViewHallEnquiry/{id}', [HallEnquiryController::class,'view'])->name('Admin.ViewHallEnquiry');
+    Route::get('/EditHallEnquiry/{id}', [HallEnquiryController::class,'edit'])->name('Admin.EditHallEnquiry');
+    Route::put('/UpdateHallEnquiry/{id}', [HallEnquiryController::class,'update'])->name('Admin.UpdateHallEnquiry');
+    Route::get('/admin/rules-prints', [HallEnquiryController::class, 'rulesPrints'])->name('admin.rules-prints');
 
     Route::post('/AdminStroreOffice/{id}', [HallEnquiryController::class,'storeOffice'])->name('Admin.StoreOffice');
+    Route::post('/admin/send-quotation/{id}', [HallEnquiryController::class,'sendQuotation'])->name('admin.send.quotation');
     Route::get('/admin/pre-show/stream/{id}', [HallEnquiryController::class, 'preShowStream'])->name('admin.pre.show.stream');
     Route::delete('/AdminHallEnquiry/cancel/{id}', [HallEnquiryController::class,'cancel'])->name('admin.hall-enquiry.cancel');
     Route::get('/admin/hall-enquiries/export/{period?}', [HallEnquiryController::class, 'exportExcel'])->name('admin.hall-enquiries.export');
@@ -447,6 +453,8 @@ Route::middleware(['auth'])->group(function () {
 
 
 Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotation'])->name('admin.quotation.stream');
+Route::get('/admin/quotation/edit/{id}', [BillController::class, 'editQuotation'])->name('admin.quotation.edit');
+Route::put('/admin/quotation/update/{id}', [BillController::class, 'updateQuotation'])->name('admin.quotation.update');
 
      //-----------------------------------------------------------------------------------------------------------------
 
@@ -504,6 +512,7 @@ Route::get('/admin/quotation/stream/{id}', [BillController::class, 'streamQuotat
     Route::post('/update-status', [HallBokkingController::class, 'updateStatus'])->name('update.status');
 
     Route::post('/admin/cancel-booking/{id}', [HallBokkingController::class, 'cancelBooking'])->name('cancel.booking');
+    Route::post('/admin/cancel-group-booking/{groupCode}', [HallBokkingController::class, 'cancelGroupBooking'])->name('cancel.group.booking');
 
 
 

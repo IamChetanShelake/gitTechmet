@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Eventitem;
 use App\Models\BookedHall;
 use App\Models\Cateringitem;
 use App\Models\EventService;
 use Illuminate\Http\Request;
 use App\Models\CateringService;
-use App\Models\Eventitem;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class EventCateringController extends Controller
@@ -38,28 +39,135 @@ class EventCateringController extends Controller
         // - `booked_by` is NULL (unbooked halls)
         // - OR `booked_by` matches the logged-in vendor (vendor sees only their own bookings)
         // - Include cancelled bookings so vendors know the booking was cancelled
-        $eventBookings = BookedHall::where('event_flag', 1)
+        $eventBookingsQuery = BookedHall::where('event_flag', 1)
         ->where(function ($query) use ($vendorId) {
             $query->whereNull('event_booked_by')  // Show unbooked halls
                   ->orWhere('event_booked_by', $vendorId); // Show only vendor's own bookings
         })
-        ->with('eventServices')
-        ->get();
+        ->orderBy('created_at', 'desc')
+        ->with('eventServices');
 
-        return view('Event.VendorEventCrud.EventTable', compact('eventBookings'));
+        $eventBookingsRaw = $eventBookingsQuery->get();
+
+        // Group bookings by group_code for display
+        $groupedBookings = collect();
+        $processedGroups = [];
+
+        foreach ($eventBookingsRaw as $booking) {
+            if ($booking->group_code && !in_array($booking->group_code, $processedGroups)) {
+                // This is a multi-hall booking group
+                $groupBookings = BookedHall::where('group_code', $booking->group_code)
+                                           ->where('event_flag', 1)
+                                           ->where(function ($query) use ($vendorId) {
+                                               $query->whereNull('event_booked_by')
+                                                     ->orWhere('event_booked_by', $vendorId);
+                                           })
+                                           ->with('eventServices')
+                                           ->get();
+
+                // Create a representative booking object for the group
+                $groupRep = $groupBookings->first();
+                $groupRep->is_group = true;
+
+                // Combine hall names
+                $hallNames = $groupBookings->pluck('hall_name')->implode(', ');
+                $groupRep->hall_name = $hallNames;
+                $groupRep->group_count = $groupBookings->count();
+
+                // Combine event services from all halls in the group
+                $allEventServices = collect();
+                foreach ($groupBookings as $groupBooking) {
+                    $allEventServices = $allEventServices->merge($groupBooking->eventServices);
+                }
+                $groupRep->eventServices = $allEventServices;
+
+                $groupedBookings->push($groupRep);
+                $processedGroups[] = $booking->group_code;
+            } elseif (!$booking->group_code) {
+                // This is a single hall booking
+                $booking->is_group = false;
+                $groupedBookings->push($booking);
+            }
+        }
+
+        return view('Event.VendorEventCrud.EventTable', ['eventBookings' => $groupedBookings]);
     }
 
     public function viewEventBooking($id){
         $eventBooking = BookedHall::with('eventServices')->findOrFail($id);
-         // ✅ Update `booked_by` field in `booked_halls` table
-         foreach ($eventBooking->eventServices as $service) {
-            $itemIds = json_decode($service->Item_id, true); // Decode stored JSON array
 
-            // Fetch item names based on IDs and store in a new attribute
-            $service->item_names = Eventitem::whereIn('id', $itemIds)->pluck('item_name')->toArray();
+        // Check if this is a multi-hall booking
+        $groupedEnquiries = collect();
+        if ($eventBooking->group_code) {
+            $groupedEnquiries = BookedHall::where('group_code', $eventBooking->group_code)
+                                         ->with('eventServices')
+                                         ->orderBy('hall_name')
+                                         ->get();
+        } else {
+            $groupedEnquiries->push($eventBooking);
         }
 
+        $isMultiHall = $groupedEnquiries->count() > 1;
 
+        // If multi-hall, create a combined representation
+        if ($isMultiHall) {
+            // Create a merged object with combined information
+            $combinedBooking = clone $groupedEnquiries->first();
+
+            // Combine hall names
+            $hallNames = $groupedEnquiries->pluck('hall_name')->toArray();
+            $combinedBooking->hall_name = implode(', ', $hallNames);
+            $combinedBooking->group_count = $groupedEnquiries->count();
+
+            // Combine all event services
+            $allEventServices = collect();
+            foreach ($groupedEnquiries as $booking) {
+                $allEventServices = $allEventServices->merge($booking->eventServices);
+            }
+            $combinedBooking->eventServices = $allEventServices;
+
+            // Collect all event dates for display
+            $allDates = $groupedEnquiries->pluck('event_date')->unique()->filter()->values()->toArray();
+
+            // Group bookings by hall name and collect all timing info per hall
+            $hallTimingInfo = [];
+            $groupedByHall = $groupedEnquiries->groupBy('hall_name');
+
+            foreach ($groupedByHall as $hallName => $hallBookings) {
+                $hallInfo = [
+                    'hall_name' => $hallName,
+                    'dates_times' => []
+                ];
+
+                foreach ($hallBookings as $booking) {
+                    $hallInfo['dates_times'][] = [
+                        'event_date' => $booking->event_date,
+                        'start_time' => $booking->start_time,
+                        'end_time' => $booking->end_time,
+                        'duration' => $booking->duration
+                    ];
+                }
+
+                $hallTimingInfo[] = $hallInfo;
+            }
+
+            // Format dates and hall timing info for display
+            $combinedBooking->all_event_dates = $allDates;
+            $combinedBooking->hall_timing_info = $hallTimingInfo;
+
+            $eventBooking = $combinedBooking;
+        }
+
+        // ✅ Update `booked_by` field in `booked_halls` table for each service
+        foreach ($eventBooking->eventServices as $service) {
+            if (isset($service->Item_id)) {
+                $itemIds = json_decode($service->Item_id, true); // Decode stored JSON array
+                // Fetch item names based on IDs and store in a new attribute
+                $service->item_names = Eventitem::whereIn('id', $itemIds)->pluck('item_name')->toArray();
+            } else {
+                $service->item_names = [];
+            }
+        }
 
         // Pass data to the view
         return view('Event.VendorEventCrud.EventViewBooking', compact('eventBooking'));
@@ -119,21 +227,36 @@ class EventCateringController extends Controller
 
     private function sendEventWhatsAppMessage($bookedHallId, $vendorName)
     {
-
         $bookedHall = \App\Models\BookedHall::find($bookedHallId);
 
         if (!$bookedHall) {
-            \Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
+            Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
             return;
+        }
+
+        // Check if this is a multi-hall booking
+        $groupedEnquiries = collect();
+        if ($bookedHall->group_code) {
+            $groupedEnquiries = BookedHall::where('group_code', $bookedHall->group_code)->orderBy('hall_name')->get();
+        } else {
+            $groupedEnquiries->push($bookedHall);
+        }
+
+        $isMultiHall = $groupedEnquiries->count() > 1;
+
+        // Build hall information
+        if ($isMultiHall) {
+            $hallNames = $groupedEnquiries->pluck('hall_name')->toArray();
+            $hallInfo = implode(', ', $hallNames) . ' (' . count($hallNames) . ' halls)';
+        } else {
+            $hallInfo = $bookedHall->hall_name ?? 'Event Hall';
         }
 
         $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
         $token = trim(config('oneclick.api_token'));
 
         $contactNumber =  $bookedHall->customer_phone;
-
         $customerName = $bookedHall->customer_name ?? 'Customer';
-        $hallName = $bookedHall->hall_name ?? 'Event Hall';
 
         $payloadArray = [
             "to" => $contactNumber,
@@ -151,7 +274,7 @@ class EventCateringController extends Controller
                         "parameters" => [
                             ["type" => "text", "text" => $customerName], // {{1}}
                             ["type" => "text", "text" => $vendorName],   // {{2}}
-                            ["type" => "text", "text" => $hallName],     // {{3}}
+                            ["type" => "text", "text" => $hallInfo],     // {{3}}
                         ]
                     ]
                 ]
@@ -177,7 +300,7 @@ class EventCateringController extends Controller
         curl_close($ch);
 
         // 🧾 Log everything
-        \Log::info("📤 Catering WhatsApp Message Log", [
+        Log::info("📤 Event WhatsApp Message Log", [
             'contact' => $contactNumber,
             'http_code' => $httpCode,
             'payload' => $payloadArray,
@@ -186,9 +309,9 @@ class EventCateringController extends Controller
         ]);
 
         if ($httpCode == 200) {
-            \Log::info("✅ WhatsApp catering message sent to {$contactNumber}.");
+            Log::info("✅ WhatsApp event message sent to {$contactNumber}.");
         } else {
-            \Log::error("❌ WhatsApp catering message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
+            Log::error("❌ WhatsApp event message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
         }
     }
 
@@ -209,16 +332,39 @@ class EventCateringController extends Controller
 
     public function confirmEvent($eventId)
         {
-            $eventBooking = EventService::where('booked_hall_id', $eventId)->first();
-            if ($eventBooking) {
-                $eventBooking->status = 'confirmed';
-                $eventBooking->save();
+            $bookedHall = BookedHall::find($eventId);
+            if (!$bookedHall) {
+                return redirect()->back()->with('error', 'Booking not found.');
+            }
 
-                $vendorName = Auth::user()->name ?? 'Vendor'; // vendor's name
+            // If this is a multi-hall booking, confirm all event services in the group
+            if ($bookedHall->group_code) {
+                $groupBookings = BookedHall::where('group_code', $bookedHall->group_code)
+                                          ->where('event_flag', 1)
+                                          ->get();
+
+                foreach ($groupBookings as $groupBooking) {
+                    $eventService = EventService::where('booked_hall_id', $groupBooking->id)->first();
+                    if ($eventService) {
+                        $eventService->status = 'confirmed';
+                        $eventService->save();
+                    }
+                }
+
+                $vendorName = Auth::user()->name ?? 'Vendor';
                 $this->sendBookingConfirmedMessage($eventId, $vendorName, 'event');
                 $this->sendBookingConfirmedMessageToAdmin($eventId, $vendorName);
+            } else {
+                // Single hall booking
+                $eventBooking = EventService::where('booked_hall_id', $eventId)->first();
+                if ($eventBooking) {
+                    $eventBooking->status = 'confirmed';
+                    $eventBooking->save();
 
-
+                    $vendorName = Auth::user()->name ?? 'Vendor';
+                    $this->sendBookingConfirmedMessage($eventId, $vendorName, 'event');
+                    $this->sendBookingConfirmedMessageToAdmin($eventId, $vendorName);
+                }
             }
 
             return redirect()->back()->with('success', 'Event booking confirmed successfully!');
@@ -230,23 +376,54 @@ class EventCateringController extends Controller
                 $bookedHall = \App\Models\BookedHall::find($bookedHallId);
 
                 if (!$bookedHall) {
-                    \Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
+                    Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
                     return;
+                }
+
+                // Check if this is a multi-hall booking
+                $groupedEnquiries = collect();
+                if ($bookedHall->group_code) {
+                    $groupedEnquiries = BookedHall::where('group_code', $bookedHall->group_code)->orderBy('hall_name')->get();
+                } else {
+                    $groupedEnquiries->push($bookedHall);
+                }
+
+                $isMultiHall = $groupedEnquiries->count() > 1;
+
+                // Build hall information
+                if ($isMultiHall) {
+                    $hallNames = $groupedEnquiries->pluck('hall_name')->toArray();
+                    $hallName = implode(', ', $hallNames) . ' (' . count($hallNames) . ' halls)';
+                } else {
+                    $hallName = $bookedHall->hall_name ?? 'Event Hall';
+                }
+
+                // Build date information
+                $allDates = [];
+                foreach ($groupedEnquiries as $booking) {
+                    $allDates[] = $booking->event_date;
+                }
+                $allDates = array_unique($allDates);
+                sort($allDates);
+
+                $eventDate = '';
+                if (count($allDates) > 1) {
+                    $eventDate = implode(', ', $allDates) . ' (' . count($allDates) . ' dates)';
+                } elseif (count($allDates) == 1) {
+                    $eventDate = $allDates[0];
                 }
 
                 // Fetch admin user (role = admin)
                 $admin = \App\Models\User::where('role', 'admin')->first();
 
                 if (!$admin || !$admin->mobile) {
-                    \Log::error("❌ Admin user or mobile number not found.");
+                    Log::error("❌ Admin user or mobile number not found.");
                     return;
                 }
 
                 // Prepare values for message
                 $adminContact = $admin->mobile;
                 $customerName = $bookedHall->customer_name ?? 'Customer';
-                $eventDate = $bookedHall->event_date ?? 'N/A';
-                $hallName = $bookedHall->hall_name ?? 'Event Hall';
 
                 // WhatsApp API details from config
                 $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
@@ -269,8 +446,8 @@ class EventCateringController extends Controller
                                 "parameters" => [
                                     ["type" => "text", "text" => $vendorName],    // {{1}} Vendor Name
                                     ["type" => "text", "text" => $customerName],  // {{2}} Customer Name
-                                    ["type" => "text", "text" => $eventDate],     // {{3}} Event Date
-                                    ["type" => "text", "text" => $hallName],      // {{4}} Hall Name
+                                    ["type" => "text", "text" => $eventDate],     // {{3}} Event Date(s)
+                                    ["type" => "text", "text" => $hallName],      // {{4}} Hall Name(s)
                                 ]
                             ]
                         ]
@@ -296,7 +473,7 @@ class EventCateringController extends Controller
                 curl_close($ch);
 
                 // Log response for debugging
-                \Log::info("📤 Admin WhatsApp Booking Message Log", [
+                Log::info("📤 Admin WhatsApp Booking Message Log", [
                     'admin_contact' => $adminContact,
                     'http_code' => $httpCode,
                     'payload' => $payloadArray,
@@ -306,9 +483,9 @@ class EventCateringController extends Controller
 
                 // Handle success/failure
                 if ($httpCode == 200) {
-                    \Log::info("✅ Booking confirmation message sent to admin: {$adminContact}.");
+                    Log::info("✅ Booking confirmation message sent to admin: {$adminContact}.");
                 } else {
-                    \Log::error("❌ Failed to send booking message to admin. HTTP {$httpCode} - {$response}");
+                    Log::error("❌ Failed to send booking message to admin. HTTP {$httpCode} - {$response}");
                 }
             }
 
@@ -360,31 +537,138 @@ class EventCateringController extends Controller
         // - `booked_by` is NULL (unbooked halls)
         // - OR `booked_by` matches the logged-in vendor (vendor sees only their own bookings)
         // - Include cancelled bookings so vendors know the booking was cancelled
-        $cateringBookings = BookedHall::where('catering_flag', 1)
+        $cateringBookingsQuery = BookedHall::where('catering_flag', 1)
         ->where(function ($query) use ($vendorId) {
             $query->whereNull('catering_booked_by')  // Show unbooked halls
                   ->orWhere('catering_booked_by', $vendorId); // Show only vendor's own bookings
         })
-        ->with('cateringServices')
-        ->get();
+        ->orderBy('created_at', 'desc')
+        ->with('cateringServices');
 
-        return view('Catering.CateringTable', compact('cateringBookings'));
+        $cateringBookingsRaw = $cateringBookingsQuery->get();
+
+        // Group bookings by group_code for display
+        $groupedBookings = collect();
+        $processedGroups = [];
+
+        foreach ($cateringBookingsRaw as $booking) {
+            if ($booking->group_code && !in_array($booking->group_code, $processedGroups)) {
+                // This is a multi-hall booking group
+                $groupBookings = BookedHall::where('group_code', $booking->group_code)
+                                           ->where('catering_flag', 1)
+                                           ->where(function ($query) use ($vendorId) {
+                                               $query->whereNull('catering_booked_by')
+                                                     ->orWhere('catering_booked_by', $vendorId);
+                                           })
+                                           ->with('cateringServices')
+                                           ->get();
+
+                // Create a representative booking object for the group
+                $groupRep = $groupBookings->first();
+                $groupRep->is_group = true;
+
+                // Combine hall names
+                $hallNames = $groupBookings->pluck('hall_name')->implode(', ');
+                $groupRep->hall_name = $hallNames;
+                $groupRep->group_count = $groupBookings->count();
+
+                // Combine catering services from all halls in the group
+                $allCateringServices = collect();
+                foreach ($groupBookings as $groupBooking) {
+                    $allCateringServices = $allCateringServices->merge($groupBooking->cateringServices);
+                }
+                $groupRep->cateringServices = $allCateringServices;
+
+                $groupedBookings->push($groupRep);
+                $processedGroups[] = $booking->group_code;
+            } elseif (!$booking->group_code) {
+                // This is a single hall booking
+                $booking->is_group = false;
+                $groupedBookings->push($booking);
+            }
+        }
+
+        return view('Catering.CateringTable', ['cateringBookings' => $groupedBookings]);
     }
 
 
 
 
     public function viewCateringBooking($id){
-        $cateringBooking = BookedHall::findOrFail($id);
+        $cateringBooking = BookedHall::with('cateringServices')->findOrFail($id);
 
-         // ✅ Update `booked_by` field in `booked_halls` table
-         foreach ($cateringBooking->cateringServices as $service) {
-            $itemIds = json_decode($service->Item_id, true); // Decode stored JSON array
-
-            // Fetch item names based on IDs and store in a new attribute
-            $service->item_names = Cateringitem::whereIn('id', $itemIds)->pluck('item_name')->toArray();
+        // Check if this is a multi-hall booking
+        $groupedEnquiries = collect();
+        if ($cateringBooking->group_code) {
+            $groupedEnquiries = BookedHall::where('group_code', $cateringBooking->group_code)
+                                         ->with('cateringServices')
+                                         ->orderBy('hall_name')
+                                         ->get();
+        } else {
+            $groupedEnquiries->push($cateringBooking);
         }
 
+        $isMultiHall = $groupedEnquiries->count() > 1;
+
+        // If multi-hall, create a combined representation
+        if ($isMultiHall) {
+            // Create a merged object with combined information
+            $combinedBooking = clone $groupedEnquiries->first();
+
+            // Combine hall names
+            $hallNames = $groupedEnquiries->pluck('hall_name')->toArray();
+            $combinedBooking->hall_name = implode(', ', $hallNames);
+            $combinedBooking->group_count = $groupedEnquiries->count();
+
+            // Combine all catering services
+            $allCateringServices = collect();
+            foreach ($groupedEnquiries as $booking) {
+                $allCateringServices = $allCateringServices->merge($booking->cateringServices);
+            }
+            $combinedBooking->cateringServices = $allCateringServices;
+
+            // Collect all event dates for display
+            $allDates = $groupedEnquiries->pluck('event_date')->unique()->filter()->values()->toArray();
+
+            // Group bookings by hall name and collect all timing info per hall
+            $hallTimingInfo = [];
+            $groupedByHall = $groupedEnquiries->groupBy('hall_name');
+
+            foreach ($groupedByHall as $hallName => $hallBookings) {
+                $hallInfo = [
+                    'hall_name' => $hallName,
+                    'dates_times' => []
+                ];
+
+                foreach ($hallBookings as $booking) {
+                    $hallInfo['dates_times'][] = [
+                        'event_date' => $booking->event_date,
+                        'start_time' => $booking->start_time,
+                        'end_time' => $booking->end_time,
+                        'duration' => $booking->duration
+                    ];
+                }
+
+                $hallTimingInfo[] = $hallInfo;
+            }
+
+            // Format dates and hall timing info for display
+            $combinedBooking->all_event_dates = $allDates;
+            $combinedBooking->hall_timing_info = $hallTimingInfo;
+
+            $cateringBooking = $combinedBooking;
+        }
+
+        // ✅ Update `booked_by` field for each service
+        foreach ($cateringBooking->cateringServices as $service) {
+            if (isset($service->Item_id)) {
+                $itemIds = json_decode($service->Item_id, true); // Decode stored JSON array
+                // Fetch item names based on IDs and store in a new attribute
+                $service->item_names = Cateringitem::whereIn('id', $itemIds)->pluck('item_name')->toArray();
+            } else {
+                $service->item_names = [];
+            }
+        }
 
         // Pass data to the view
         return view('Catering.CateringViewBooking', compact('cateringBooking'));
@@ -448,21 +732,36 @@ class EventCateringController extends Controller
 
         private function sendCateringWhatsAppMessage($bookedHallId, $vendorName)
             {
-
                 $bookedHall = \App\Models\BookedHall::find($bookedHallId);
 
                 if (!$bookedHall) {
-                    \Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
+                    Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
                     return;
+                }
+
+                // Check if this is a multi-hall booking
+                $groupedEnquiries = collect();
+                if ($bookedHall->group_code) {
+                    $groupedEnquiries = BookedHall::where('group_code', $bookedHall->group_code)->orderBy('hall_name')->get();
+                } else {
+                    $groupedEnquiries->push($bookedHall);
+                }
+
+                $isMultiHall = $groupedEnquiries->count() > 1;
+
+                // Build hall information
+                if ($isMultiHall) {
+                    $hallNames = $groupedEnquiries->pluck('hall_name')->toArray();
+                    $hallInfo = implode(', ', $hallNames) . ' (' . count($hallNames) . ' halls)';
+                } else {
+                    $hallInfo = $bookedHall->hall_name ?? 'Event Hall';
                 }
 
                 $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
                 $token = trim(config('oneclick.api_token'));
 
                 $contactNumber =  $bookedHall->customer_phone;
-
                 $customerName = $bookedHall->customer_name ?? 'Customer';
-                $hallName = $bookedHall->hall_name ?? 'Event Hall';
 
                 $payloadArray = [
                     "to" => $contactNumber,
@@ -480,7 +779,7 @@ class EventCateringController extends Controller
                                 "parameters" => [
                                     ["type" => "text", "text" => $customerName], // {{1}}
                                     ["type" => "text", "text" => $vendorName],   // {{2}}
-                                    ["type" => "text", "text" => $hallName],     // {{3}}
+                                    ["type" => "text", "text" => $hallInfo],     // {{3}}
                                 ]
                             ]
                         ]
@@ -506,7 +805,7 @@ class EventCateringController extends Controller
                 curl_close($ch);
 
                 // 🧾 Log everything
-                \Log::info("📤 Catering WhatsApp Message Log", [
+                Log::info("📤 Catering WhatsApp Message Log", [
                     'contact' => $contactNumber,
                     'http_code' => $httpCode,
                     'payload' => $payloadArray,
@@ -515,9 +814,9 @@ class EventCateringController extends Controller
                 ]);
 
                 if ($httpCode == 200) {
-                    \Log::info("✅ WhatsApp catering message sent to {$contactNumber}.");
+                    Log::info("✅ WhatsApp catering message sent to {$contactNumber}.");
                 } else {
-                    \Log::error("❌ WhatsApp catering message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
+                    Log::error("❌ WhatsApp catering message failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
                 }
             }
 
@@ -541,15 +840,39 @@ class EventCateringController extends Controller
 
     public function confirmCatering($cateringId)
         {
-            $cateringBooking = CateringService::where('booked_hall_id', $cateringId)->first();
-            if ($cateringBooking) {
-                $cateringBooking->status = 'confirmed';
-                $cateringBooking->save();
+            $bookedHall = BookedHall::find($cateringId);
+            if (!$bookedHall) {
+                return redirect()->back()->with('error', 'Booking not found.');
+            }
+
+            // If this is a multi-hall booking, confirm all catering services in the group
+            if ($bookedHall->group_code) {
+                $groupBookings = BookedHall::where('group_code', $bookedHall->group_code)
+                                          ->where('catering_flag', 1)
+                                          ->get();
+
+                foreach ($groupBookings as $groupBooking) {
+                    $cateringService = CateringService::where('booked_hall_id', $groupBooking->id)->first();
+                    if ($cateringService) {
+                        $cateringService->status = 'confirmed';
+                        $cateringService->save();
+                    }
+                }
 
                 $vendorName = Auth::user()->name ?? 'Vendor';
                 $this->sendBookingConfirmedMessage($cateringId, $vendorName, 'catering');
                 $this->sendBookingConfirmedMessageToAdminForCatering($cateringId, $vendorName);
+            } else {
+                // Single hall booking
+                $cateringBooking = CateringService::where('booked_hall_id', $cateringId)->first();
+                if ($cateringBooking) {
+                    $cateringBooking->status = 'confirmed';
+                    $cateringBooking->save();
 
+                    $vendorName = Auth::user()->name ?? 'Vendor';
+                    $this->sendBookingConfirmedMessage($cateringId, $vendorName, 'catering');
+                    $this->sendBookingConfirmedMessageToAdminForCatering($cateringId, $vendorName);
+                }
             }
 
             return redirect()->back()->with('success', 'Catering booking confirmed successfully!');
@@ -561,23 +884,54 @@ class EventCateringController extends Controller
                 $bookedHall = \App\Models\BookedHall::find($bookedHallId);
 
                 if (!$bookedHall) {
-                    \Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
+                    Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
                     return;
+                }
+
+                // Check if this is a multi-hall booking
+                $groupedEnquiries = collect();
+                if ($bookedHall->group_code) {
+                    $groupedEnquiries = BookedHall::where('group_code', $bookedHall->group_code)->orderBy('hall_name')->get();
+                } else {
+                    $groupedEnquiries->push($bookedHall);
+                }
+
+                $isMultiHall = $groupedEnquiries->count() > 1;
+
+                // Build hall information
+                if ($isMultiHall) {
+                    $hallNames = $groupedEnquiries->pluck('hall_name')->toArray();
+                    $hallName = implode(', ', $hallNames) . ' (' . count($hallNames) . ' halls)';
+                } else {
+                    $hallName = $bookedHall->hall_name ?? 'Catering Hall';
+                }
+
+                // Build date information
+                $allDates = [];
+                foreach ($groupedEnquiries as $booking) {
+                    $allDates[] = $booking->event_date;
+                }
+                $allDates = array_unique($allDates);
+                sort($allDates);
+
+                $eventDate = '';
+                if (count($allDates) > 1) {
+                    $eventDate = implode(', ', $allDates) . ' (' . count($allDates) . ' dates)';
+                } elseif (count($allDates) == 1) {
+                    $eventDate = $allDates[0];
                 }
 
                 // Fetch admin user (role = admin)
                 $admin = \App\Models\User::where('role', 'admin')->first();
 
                 if (!$admin || !$admin->mobile) {
-                    \Log::error("❌ Admin user or mobile number not found.");
+                    Log::error("❌ Admin user or mobile number not found.");
                     return;
                 }
 
                 // Prepare values for message
                 $adminContact = $admin->mobile;
                 $customerName = $bookedHall->customer_name ?? 'Customer';
-                $eventDate = $bookedHall->event_date ?? 'N/A';
-                $hallName = $bookedHall->hall_name ?? 'Catering Hall';
 
                 // WhatsApp API details from config
                 $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
@@ -600,8 +954,8 @@ class EventCateringController extends Controller
                                 "parameters" => [
                                     ["type" => "text", "text" => $vendorName],    // {{1}} Vendor Name
                                     ["type" => "text", "text" => $customerName],  // {{2}} Customer Name
-                                    ["type" => "text", "text" => $eventDate],     // {{3}} Event Date
-                                    ["type" => "text", "text" => $hallName],      // {{4}} Hall Name
+                                    ["type" => "text", "text" => $eventDate],     // {{3}} Event Date(s)
+                                    ["type" => "text", "text" => $hallName],      // {{4}} Hall Name(s)
                                 ]
                             ]
                         ]
@@ -627,7 +981,7 @@ class EventCateringController extends Controller
                 curl_close($ch);
 
                 // Log response for debugging
-                \Log::info("📤 Admin WhatsApp Catering Message Log", [
+                Log::info("📤 Admin WhatsApp Catering Message Log", [
                     'admin_contact' => $adminContact,
                     'http_code' => $httpCode,
                     'payload' => $payloadArray,
@@ -637,9 +991,9 @@ class EventCateringController extends Controller
 
                 // Handle success/failure
                 if ($httpCode == 200) {
-                    \Log::info("✅ Catering confirmation message sent to admin: {$adminContact}.");
+                    Log::info("✅ Catering confirmation message sent to admin: {$adminContact}.");
                 } else {
-                    \Log::error("❌ Failed to send catering message to admin. HTTP {$httpCode} - {$response}");
+                    Log::error("❌ Failed to send catering message to admin. HTTP {$httpCode} - {$response}");
                 }
             }
 
@@ -655,8 +1009,41 @@ class EventCateringController extends Controller
                 $bookedHall = \App\Models\BookedHall::find($bookedHallId);
 
                 if (!$bookedHall) {
-                    \Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
+                    Log::error("❌ Booked hall not found for ID: {$bookedHallId}");
                     return;
+                }
+
+                // Check if this is a multi-hall booking
+                $groupedEnquiries = collect();
+                if ($bookedHall->group_code) {
+                    $groupedEnquiries = BookedHall::where('group_code', $bookedHall->group_code)->orderBy('hall_name')->get();
+                } else {
+                    $groupedEnquiries->push($bookedHall);
+                }
+
+                $isMultiHall = $groupedEnquiries->count() > 1;
+
+                // Build hall information
+                if ($isMultiHall) {
+                    $hallNames = $groupedEnquiries->pluck('hall_name')->toArray();
+                    $hallName = implode(', ', $hallNames) . ' (' . count($hallNames) . ' halls)';
+                } else {
+                    $hallName = $bookedHall->hall_name ?? 'Event Hall';
+                }
+
+                // Build date information
+                $allDates = [];
+                foreach ($groupedEnquiries as $booking) {
+                    $allDates[] = $booking->event_date;
+                }
+                $allDates = array_unique($allDates);
+                sort($allDates);
+
+                $eventDate = '';
+                if (count($allDates) > 1) {
+                    $eventDate = implode(', ', $allDates) . ' (' . count($allDates) . ' dates)';
+                } elseif (count($allDates) == 1) {
+                    $eventDate = $allDates[0];
                 }
 
                 $apiUrl = config('oneclick.api_url') . "/" . config('oneclick.api_version') . "/" . config('oneclick.phone_id') . "/messages";
@@ -664,8 +1051,6 @@ class EventCateringController extends Controller
 
                 $contactNumber = $bookedHall->customer_phone;
                 $customerName = $bookedHall->customer_name ?? 'Customer';
-                $hallName = $bookedHall->hall_name ?? 'Event Hall';
-                $eventDate = $bookedHall->event_date ?? 'N/A';
 
                 $payloadArray = [
                     "to" => $contactNumber,
@@ -708,7 +1093,7 @@ class EventCateringController extends Controller
                 $curlError = curl_error($ch);
                 curl_close($ch);
 
-                \Log::info("📤 Vendor Booking Confirmed WhatsApp Message Log", [
+                Log::info("📤 Vendor Booking Confirmed WhatsApp Message Log", [
                     'contact' => $contactNumber,
                     'http_code' => $httpCode,
                     'payload' => $payloadArray,
@@ -717,9 +1102,9 @@ class EventCateringController extends Controller
                 ]);
 
                 if ($httpCode == 200) {
-                    \Log::info("✅ Vendor booking confirmation message sent to {$contactNumber}.");
+                    Log::info("✅ Vendor booking confirmation message sent to {$contactNumber}.");
                 } else {
-                    \Log::error("❌ Vendor booking confirmation failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
+                    Log::error("❌ Vendor booking confirmation failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
                 }
             }
 

@@ -23,7 +23,7 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('admin.AdminDashboard');
+        return redirect()->route('admin.payment-transactions.index');
     }
 
     public function event(){

@@ -76,17 +76,33 @@
 
     <p><strong>Customer Name:</strong> {{ $enquiry->name }}</p>
     <p><strong>Mob:</strong> {{ $enquiry->contact_no }}</p>
-    <p><strong>Event Venue:</strong> {{ $enquiry->hall ?? 'N/A' }}</p>
-    <p><strong>Event Date:</strong> {{ $enquiry->event_date }}</p>
-
-    {{-- <p><strong>Schedule of Event:</strong> {{ $enquiry->start_time }} TO {{ $enquiry->end_time }}</p> --}}
-    <p>
-        <strong>Schedule of Event:</strong>
-        {{ date('g:i A', strtotime($enquiry->start_time)) }} TO {{ date('g:i A', strtotime($enquiry->end_time)) }}
-    </p>
+    @if($isMultiHall)
+        <p><strong>Event Venues:</strong> {{ ($hallEnquiries ?? $groupedEnquiries)->pluck('hall')->join(', ') }}</p>
+        <p><strong>Event Dates:</strong>
+            @php
+                $allDates = [];
+                foreach(($hallEnquiries ?? $groupedEnquiries) as $hallEnquiry) {
+                    $dates = $hallEnquiry->event_dates ? json_decode($hallEnquiry->event_dates, true) : [$hallEnquiry->event_date];
+                    $allDates = array_merge($allDates, $dates);
+                }
+                $allDates = array_unique($allDates);
+                sort($allDates);
+            @endphp
+            {{ implode(', ', $allDates) }}
+        </p>
+    @else
+        <p><strong>Event Venue:</strong> {{ $enquiry->hall ?? 'N/A' }}</p>
+        <p><strong>Event Date:</strong>
+            @php
+                $dates = $enquiry->event_dates ? json_decode($enquiry->event_dates, true) : [$enquiry->event_date];
+                $dates = array_filter($dates);
+                sort($dates);
+            @endphp
+            {{ implode(', ', $dates) }}
+        </p>
+    @endif
 
     <p><strong>Type of Event:</strong> {{ $enquiry->event_type }}</p>
-    {{-- <p><strong>Hall Name:</strong> {{ $enquiry->hall ?? 'N/A' }}</p> --}}
 
     <p><strong>Generated on:</strong> {{ date('d-m-Y H:i:s') }}</p>
 
@@ -97,56 +113,79 @@
             <th>Amount (Rs.)</th>
         </tr>
 
-        <!-- Refundable Deposits -->
+        <!-- Refundable Deposits - Show all halls' deposits together -->
+        @php $srNo = 1; @endphp
+        @foreach($hallEnquiries ?? $groupedEnquiries as $hallEnquiry)
         <tr>
-            <td>1</td>
-            <td>{{$enquiry->hall}} (Refundable Deposit)</td>
-            <td>{{ number_format($enquiry->deposit, 2) }}</td>
+            <td>{{ $srNo++ }}</td>
+            <td>{{ $hallEnquiry->hall }} (Refundable Deposit)</td>
+            <td>{{ number_format($hallEnquiry->deposit ?? 0, 2) }}</td>
         </tr>
+        @endforeach
         <tr>
-            <td>2</td>
+            <td>{{ $srNo++ }}</td>
             <td>Parking Space</td>
             <td>0.00</td>
         </tr>
         <tr>
             <td colspan="2" class="total"><strong>Total Deposit</strong></td>
-            <td><strong>{{ number_format($enquiry->deposit, 2) }}</strong></td>
+            <td><strong>{{ number_format($totalDeposit, 2) }}</strong></td>
         </tr>
 
-        <!-- Charges Section -->
-        {{-- <tr>
-            <td>1</td>
-            <td>{{ $enquiry->hall }}</td>
-            <td>0.00</td>
-        </tr>
-        <tr>
-            <td>2</td>
-            <td>Parking Space</td>
-            <td>0.00</td>
-        </tr> --}}
-        {{-- <tr>
-            <td colspan="2" class="total"><strong>Total Charges</strong></td>
-            <td><strong>0.00</strong></td>
-        </tr> --}}
+        <!-- Hall Rent Section - Show in specific format -->
+        @foreach($hallEnquiries ?? $groupedEnquiries as $hallEnquiry)
+            @php
+                $dates = $hallEnquiry->event_dates ? json_decode($hallEnquiry->event_dates, true) : [$hallEnquiry->event_date];
+                $dates = array_filter($dates);
+                sort($dates);
 
-        <!-- Charges Section (Hall Rent + Accessories) -->
-        <tr>
-            <td>1</td>
-            <td>{{ $enquiry->hall }} (Hall Rent)</td>
-            <td>{{ number_format($enquiry->rent_amount, 2) }}</td>
-        </tr>
+                $hallRentText = $hallEnquiry->hall;
 
-        @php $srNo = 2; @endphp
-        @foreach ($accessories as $accessory)
-            @php $price = (float) ($accessory->price ?? 0); $hours = (float) ($accessory->hours ?? 1); @endphp
-            @if($price > 0 && $hours > 0)
-                @php $blocks = floor($totalHours / $hours); $totalPrice = $price * max($blocks, 1); @endphp
+                // Check if all dates are consecutive
+                $isConsecutive = true;
+                if(count($dates) > 1) {
+                    for($i = 1; $i < count($dates); $i++) {
+                        $prevDate = strtotime($dates[$i-1]);
+                        $currDate = strtotime($dates[$i]);
+                        if($currDate != strtotime('+1 day', $prevDate)) {
+                            $isConsecutive = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(count($dates) > 1 && $isConsecutive) {
+                    // Consecutive dates - show as "15&16 08:00 to 02:00"
+                    $firstDate = date('d', strtotime($dates[0]));
+                    $lastDate = date('d', strtotime(end($dates)));
+                    $hallRentText .= '(' . $firstDate . '&' . $lastDate . ' ' .
+                                   date('H:i', strtotime($hallEnquiry->start_time)) . ' to ' . date('H:i', strtotime($hallEnquiry->end_time)) . ')';
+                } elseif(count($dates) > 1) {
+                    // Non-consecutive dates - show as "18,19,20,21-12-2025"
+                    $formattedDates = array_map(function($d) { return date('d', strtotime($d)); }, $dates);
+                    $monthYear = date('-m-Y', strtotime($dates[0]));
+                    $hallRentText .= '(' . implode(',', $formattedDates) . $monthYear . ')';
+                } else {
+                    // Single date - show as "18-12-2025"
+                    $hallRentText .= '(' . date('d-m-Y', strtotime($dates[0])) . ')';
+                }
+            @endphp
         <tr>
             <td>{{ $srNo++ }}</td>
-            <td>{{ $accessory->name }}</td>
-            <td>{{ number_format($totalPrice, 2) }}</td>
+            <td>{{ $hallRentText }}</td>
+            <td>{{ number_format($hallEnquiry->rent_amount ?? 0, 2) }}</td>
         </tr>
-            @endif
+        @endforeach
+
+        <!-- Accessories Section - Group by hall -->
+        @foreach($allAccessories->groupBy('hall_name') as $hallName => $hallAccessories)
+            @foreach($hallAccessories as $accessory)
+        <tr>
+            <td>{{ $srNo++ }}</td>
+            <td>{{ $accessory->name }} ({{ $hallName }})</td>
+            <td>{{ number_format($accessory->calculated_price, 2) }}</td>
+        </tr>
+            @endforeach
         @endforeach
 
         <tr>
@@ -169,7 +208,7 @@
         </tr>
         <tr>
             <td colspan="2" class="total"><strong>Total Amt. (Including Deposit & GST)</strong></td>
-            <td><strong>{{ number_format($enquiry->deposit + $finalAmount, 2) }}</strong></td>
+            <td><strong>{{ number_format($totalDeposit + $finalAmount, 2) }}</strong></td>
         </tr>
 
     </table>

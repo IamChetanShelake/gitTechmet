@@ -1,6 +1,7 @@
 @extends('admin.layout.masteradmin')
 
 @section('content')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <div class="col-12">
     <div class="card my-4">
         <!-- Card Header -->
@@ -110,7 +111,7 @@
                     <label for="hallFilter" class="form-label text-sm font-weight-bold">Filter by Hall Name</label>
                     <select id="hallFilter" class="form-select">
                         <option value="">All Halls</option>
-                        @foreach($hallenquiries->unique('hall') as $enquiry)
+                        @foreach($groupedEnquiries->unique('hall') as $enquiry)
                             <option value="{{ $enquiry->hall }}">{{ $enquiry->hall }}</option>
                         @endforeach
                     </select>
@@ -140,7 +141,7 @@
         <div class="d-flex justify-content-end px-3 mb-3">
             <div class="btn-group" role="group">
                 <button id="exportDropdown" type="button" class="btn btn-success btn-lg px-4 py-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-download"></i> Export Reports
+                    <i class="fa fa-download"></i> Export Reports
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="exportDropdown">
                     <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'all') }}">
@@ -170,13 +171,13 @@
                             <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Hall Name</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">View All Details</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Action</th>
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Quotation</th>
                             <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Confirm Bokking</th>
-
+                            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Confirm Booking</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($hallenquiries as $index => $hallenquirie)
+                        @foreach($groupedEnquiries as $index => $hallenquirie)
                             <tr>
                                 <!-- Sr No. -->
                                 <td>
@@ -193,9 +194,21 @@
                                 </td>
 
                                 <!-- Hall Name -->
-                                <td>
+                                <td style="max-width: 220px;">
                                     <div class="d-flex px-2 py-1">
-                                        <h6 class="mb-0 text-sm">{{ $hallenquirie->hall }}</h6>
+                                        @if($hallenquirie->is_group)
+                                            <div title="{{ implode(', ', $hallenquirie->group_halls) }}">
+                                                <h6 class="mb-1 text-sm text-truncate" style="max-width: 180px;">
+                                                    {{ $hallenquirie->group_halls[0] }}
+                                                    @if($hallenquirie->group_count > 1)
+                                                        <small class="text-muted">+{{ $hallenquirie->group_count - 1 }} more</small>
+                                                    @endif
+                                                </h6>
+                                                <small class="text-muted">{{ $hallenquirie->group_count }} halls</small>
+                                            </div>
+                                        @else
+                                            <h6 class="mb-0 text-sm">{{ $hallenquirie->hall }}</h6>
+                                        @endif
                                     </div>
                                 </td>
 
@@ -206,55 +219,45 @@
                                     </a>
                                 </td>
 
-                                <!-- Action (Cancel Enquiry) -->
+                                <!-- Action (Edit/Cancel Enquiry) -->
                                 <td class="align-middle text-center">
-                                    <form action="{{ route('admin.hall-enquiry.cancel', $hallenquirie->id) }}" method="POST" style="display:inline;">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to cancel this hall enquiry?')">
-                                            Cancel Enquiry
-                                        </button>
-                                    </form>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('Admin.EditHallEnquiry', $hallenquirie->id) }}" class="btn btn-info btn-sm">
+                                            <i class="fa fa-edit"></i> Edit
+                                        </a>
+                                        <form action="{{ route('admin.hall-enquiry.cancel', $hallenquirie->id) }}" method="POST" style="display:inline;">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" style="background-color: red; border-color: red;border-bottom-left-radius: 0px;border-top-left-radius: 0px;height: 36px;" class="btn btn-sm btn-sm text-white" onclick="return confirm('Are you sure you want to cancel this hall enquiry?')">
+                                                <i class="fa fa-ban"></i> Cancel
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
 
-                                {{-- <td class="align-middle text-center">
-                                    <a href="{{route('Generate.Bill',$hallenquirie->id)}}">
-                                        Generate Bill
-                                    </a>
-                                </td> --}}
-                                {{-- <td class="align-middle text-center">
-                                    <a href="{{ route('Generate.Bill', $hallenquirie->id) }}"
-                                       class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"
-                                       style="background-color: #007bff; border-color: #007bff;">
-                                        <span class="material-symbols-outlined" style="font-size: 18px;">request_quote</span>
-                                        <span>Generate Bill</span>
-                                    </a>
-                                </td> --}}
 
-                                <!--<td class="align-middle text-center">-->
-                                <!--    @if($hallenquirie->status == 'Viewed')-->
-                                <!--        {{-- <a href="{{ route('Generate.Bill', $hallenquirie->id) }}"-->
-                                <!--           class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"-->
-                                <!--           style="background-color: #007bff; border-color: #007bff;">-->
-                                <!--            <span class="material-symbols-outlined" style="font-size: 18px;">request_quote</span>-->
-                                <!--            <span>Quotation</span> --}}
-                                <!--            @if($hallenquirie->quotation_file)-->
-                                <!--                <a href="{{ asset('quotation/' .$hallenquirie->quotation_file) }}" target="_blank" class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"-->
-                                <!--                    style="background-color: #007bff; border-color: #007bff;">-->
-                                <!--                    View Quotation-->
-                                <!--                </a>-->
-                                <!--            @endif-->
-
-                                <!--        </a>-->
-                                <!--    @endif-->
-                                <!--</td>-->
                                 <td class="align-middle text-center">
                                     @if($hallenquirie->status == 'Viewed')
                                             @if($hallenquirie->quotation_file)
-                                                <a href="{{ route('admin.quotation.stream', $hallenquirie->id) }}" target="_blank" class="btn btn-sm shadow-sm text-white d-flex align-items-center justify-content-center gap-2"
-                                                    style="background-color: #007bff; border-color: #007bff;">
-                                                    View Quotation
-                                                </a>
+                                                <div class="btn-group-vertical" role="group">
+                                                    <div class="btn-group mb-1" role="group">
+                                                        <a href="{{ route('admin.quotation.stream', $hallenquirie->id) }}" target="_blank" class="btn btn-sm shadow-sm text-white"
+                                                            style="background-color: #007bff; border-color: #007bff;">
+                                                            <i class="fa fa-eye"></i> View Quotation
+                                                        </a>
+                                                        <a href="{{ route('admin.quotation.edit', $hallenquirie->id) }}" class="btn btn-warning shadow-sm text-white">
+                                                            <i class="fa fa-edit"></i> Edit
+                                                        </a>
+                                                        <form action="{{ route('admin.send.quotation', $hallenquirie->id) }}" method="POST" class="d-inline">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-sm shadow-sm text-white"
+                                                            style="background-color: #16af58; border-color: #16af58;border-bottom-left-radius: 0px;border-top-left-radius: 0px;height: 36px;">
+                                                            <i class="fa fa-whatsapp" style="font-size: 20px;"></i>
+                                                        </button>
+                                                    </form>
+                                                    </div>
+
+                                                </div>
                                             @endif
                                     @endif
                                 </td>

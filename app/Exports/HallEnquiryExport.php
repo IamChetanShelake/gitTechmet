@@ -68,6 +68,7 @@ class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, Wi
     {
         return [
             'Sr. No.',
+            'Customer Name',
             'Date',
             'Organization Name',
             'Event Type',
@@ -90,6 +91,7 @@ class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, Wi
         $serialNumber++; // Increment serial number for each row
 
         $srNo = $serialNumber; // Sequential Sr. No. starting from 1
+        $customerName = $enquiry->name ?? '';
         $date = $enquiry->event_date ? Carbon::parse($enquiry->event_date)->format('d-m-Y') : '';
         $organization = $enquiry->organization ?? '';
         $eventType = $enquiry->event_type ?? '';
@@ -143,6 +145,7 @@ class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, Wi
 
         return [
             $srNo,
+            $customerName,
             $date,
             $organization,
             $eventType,
@@ -161,7 +164,7 @@ class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function columnFormats(): array
     {
         return [
-            'E' => NumberFormat::FORMAT_TEXT, // Mobile No. column (5th column, 0-indexed as 4, Excel column E)
+            'F' => NumberFormat::FORMAT_TEXT, // Mobile No. column (6th column, 0-indexed as 5, Excel column F)
         ];
     }
 }

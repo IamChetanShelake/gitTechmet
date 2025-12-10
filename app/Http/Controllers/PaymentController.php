@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use App\Models\PaymentTransaction;
+use App\Models\Page;
+use App\Models\Contact;
 use App\Models\BookedHall;
 use App\Models\HallEnquiry;
-use App\Models\Contact;
-use App\Models\Page;
+use Illuminate\Http\Request;
+use App\Models\PaymentTransaction;
+use Illuminate\Support\FacadesLog;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class PaymentController extends Controller
 {
@@ -64,7 +65,7 @@ class PaymentController extends Controller
                 'status' => 'initiated'
             ]);
 
-            Log::info('Payment initiated for booking ID: ' . $bookingId, [
+        Log::info('Payment initiated for booking ID: ' . $bookingId, [
                 'transaction_id' => $transaction->id,
                 'merchant_txn_no' => $txnNo,
                 'amount' => $totalAmount,
@@ -87,11 +88,11 @@ class PaymentController extends Controller
 
                     return redirect()->away($redirectUrl);
                 } else {
-                    Log::error('Invalid response from PhiCommerce', $responseData);
+                Log::error('Invalid response from PhiCommerce', $responseData);
                     return redirect()->back()->with('error', 'Payment gateway error. Please try again.');
                 }
             } else {
-                Log::error('PhiCommerce API request failed', [
+            Log::error('PhiCommerce API request failed', [
                     'status' => $response->status(),
                     'body' => $response->body()
                 ]);
@@ -99,7 +100,7 @@ class PaymentController extends Controller
             }
 
         } catch (\Exception $e) {
-            Log::error('Payment initiation failed', [
+        Log::error('Payment initiation failed', [
                 'booking_id' => $bookingId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -115,7 +116,7 @@ class PaymentController extends Controller
     public function handleResponse(Request $request)
     {
         try {
-            \Log::info('🔄 Payment Gateway Response Received:', $request->all());
+            Log::info('🔄 Payment Gateway Response Received:', $request->all());
             $contacts = Contact::all();
             $pages = Page::all();
 
@@ -127,7 +128,7 @@ class PaymentController extends Controller
             $paymentMode = $data['paymentMode'] ?? null;
             $amount = $data['amount'] ?? null;
 
-            \Log::info('📊 Payment Response Details:', [
+            Log::info('📊 Payment Response Details:', [
                 'merchant_txn_no' => $merchantTxnNo,
                 'response_code' => $responseCode,
                 'payment_id' => $payPhiTxnNo,
@@ -137,7 +138,7 @@ class PaymentController extends Controller
             ]);
 
             if (!$merchantTxnNo || !$responseCode) {
-                \Log::error('❌ Invalid payment gateway response - missing required fields');
+                Log::error('❌ Invalid payment gateway response - missing required fields');
                 return view('website.payment-status', [
                     'status' => 'error',
                     'message' => 'Invalid payment gateway response.',
@@ -153,23 +154,23 @@ class PaymentController extends Controller
             switch ($responseCode) {
                 case '0000':
                     $transactionStatus = 'SUCCESS';
-                    \Log::info('✅ Payment Status: SUCCESS (0000)');
+                    Log::info('✅ Payment Status: SUCCESS (0000)');
                     break;
                 case 'R1000':
                     $transactionStatus = 'SUCCESS'; // R1000 means payment processed successfully by PhiCommerce
-                    \Log::info('✅ Payment Status: SUCCESS (R1000) - Request processed successfully by PhiCommerce');
+                    Log::info('✅ Payment Status: SUCCESS (R1000) - Request processed successfully by PhiCommerce');
                     break;
                 case '039':
                     $transactionStatus = 'FAILED'; // Transaction Rejected
-                    \Log::info('❌ Payment Status: FAILED (039) - Transaction Rejected');
+                    Log::info('❌ Payment Status: FAILED (039) - Transaction Rejected');
                     break;
                 case '020':
                     $transactionStatus = 'FAILED'; // Cancelled by user
-                    \Log::info('❌ Payment Status: FAILED (020) - Cancelled by user');
+                    Log::info('❌ Payment Status: FAILED (020) - Cancelled by user');
                     break;
                 default:
                     $transactionStatus = 'FAILED';
-                    \Log::info('❌ Payment Status: FAILED (' . $responseCode . ') - Unknown response code');
+                    Log::info('❌ Payment Status: FAILED (' . $responseCode . ') - Unknown response code');
                     break;
             }
 
@@ -177,7 +178,7 @@ class PaymentController extends Controller
             $transaction = PaymentTransaction::where('merchant_txn_no', $merchantTxnNo)->first();
 
             if (!$transaction) {
-                \Log::error('❌ Transaction not found for merchant txn no: ' . $merchantTxnNo);
+                Log::error('❌ Transaction not found for merchant txn no: ' . $merchantTxnNo);
                 return view('website.payment-status', [
                     'status' => 'error',
                     'message' => 'Transaction not found',
@@ -187,7 +188,7 @@ class PaymentController extends Controller
                 ]);
             }
 
-            \Log::info('📝 Updating transaction in database:', [
+            Log::info('📝 Updating transaction in database:', [
                 'transaction_id' => $transaction->id,
                 'old_status' => $transaction->status,
                 'new_status' => $transactionStatus,
@@ -205,22 +206,23 @@ class PaymentController extends Controller
 
             // No need to check status for R1000 since it already means SUCCESS
             // R1000 = "Request processed successfully" by PhiCommerce
-            \Log::info('🎯 Payment processing completed - Status: ' . $transactionStatus);
+            Log::info('🎯 Payment processing completed - Status: ' . $transactionStatus);
 
             // Update booked hall payment status if payment is successful
             if ($transactionStatus === 'SUCCESS') {
-                \Log::info('🎉 Processing successful payment...');
+                Log::info('🎉 Processing successful payment...');
                 $bookedHall = $transaction->bookedHall;
                 if ($bookedHall) {
-                    \Log::info('🏢 Updating booked hall payment details:', [
+                    Log::info('🏢 Updating booked hall payment details:', [
                         'booking_id' => $bookedHall->id,
                         'paid_amount' => $transaction->amount,
                         'total_rent' => $bookedHall->total_rent
                     ]);
 
+                    // Keep paid_amount as total committed amount, don't reduce it
+                    // remaining_amount is calculated separately in views
                     $bookedHall->update([
-                        'paid_amount' => $transaction->amount,
-                        'remaining_amount' => max(0, $bookedHall->total_rent - $transaction->amount)
+                        'remaining_amount' => 0
                     ]);
 
                     // Send WhatsApp notification for successful payment
@@ -237,7 +239,7 @@ class PaymentController extends Controller
                     'gateway_response' => $data
                 ]);
             } elseif ($transactionStatus === 'PENDING') {
-                \Log::info('⏳ Payment is pending - showing pending status to user');
+                Log::info('⏳ Payment is pending - showing pending status to user');
                 return view('website.payment-status', [
                     'status' => 'pending',
                     'message' => 'Payment is being processed. Please wait for confirmation. You will receive a notification once the payment is confirmed.',
@@ -247,7 +249,7 @@ class PaymentController extends Controller
                     'gateway_response' => $data
                 ]);
             } else {
-                \Log::info('❌ Payment failed - showing failure status to user');
+                Log::info('❌ Payment failed - showing failure status to user');
                 return view('website.payment-status', [
                     'status' => 'failed',
                     'message' => $respDescription ?? 'Payment failed. Please try again.',
@@ -259,7 +261,7 @@ class PaymentController extends Controller
             }
 
         } catch (\Exception $e) {
-            \Log::error('💥 Payment response handling failed:', [
+            Log::error('💥 Payment response handling failed:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'request_data' => $request->all()
@@ -316,7 +318,7 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Status check failed'], 500);
 
         } catch (\Exception $e) {
-            Log::error('Payment status check failed', [
+        Log::error('Payment status check failed', [
                 'merchant_txn_no' => $merchantTxnNo,
                 'error' => $e->getMessage()
             ]);
@@ -375,7 +377,7 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Refund failed'], 500);
 
         } catch (\Exception $e) {
-            Log::error('Refund failed', [
+        Log::error('Refund failed', [
                 'merchant_txn_no' => $merchantTxnNo,
                 'error' => $e->getMessage()
             ]);
@@ -388,6 +390,23 @@ class PaymentController extends Controller
      * Calculate amount based on payment type
      */
     private function calculateAmountByType($bookedHall, $paymentType)
+    {
+        // Check if this is a multi-hall booking
+        $isMultiHall = !empty($bookedHall->group_code);
+
+        if ($isMultiHall) {
+            // For multi-hall bookings, calculate combined amounts
+            return $this->calculateMultiHallAmount($bookedHall, $paymentType);
+        } else {
+            // For single hall bookings, use existinglogic
+            return $this->calculateSingleHallAmount($bookedHall, $paymentType);
+        }
+    }
+
+    /**
+     * Calculate amount for single hall booking
+     */
+    private function calculateSingleHallAmount($bookedHall, $paymentType)
     {
         $rentAmount = $bookedHall->total_rent ?? 0;
         $depositAmount = $bookedHall->total_deposit ?? 0;
@@ -426,6 +445,92 @@ class PaymentController extends Controller
     }
 
     /**
+     * Calculate amount for multi-hall booking
+     */
+    private function calculateMultiHallAmount($bookedHall, $paymentType)
+    {
+        // Get all halls in the group
+        $groupBookings = BookedHall::where('group_code', $bookedHall->group_code)->get();
+
+        // Calculate combined amounts
+        $totalRent = $groupBookings->sum('total_rent');
+        $totalDeposit = $groupBookings->sum('total_deposit');
+
+        // Calculate total accessories and GST for all halls
+        $totalAccessories = 0;
+        $totalRentWithGst = 0;
+
+        foreach ($groupBookings as $hallBooking) {
+            // Calculate accessories for this hall
+            $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $hallBooking->start_time . ':00');
+            $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $hallBooking->end_time . ':00');
+            $totalHours = $startTime->diffInHours($endTime, false);
+
+            // Get number of days from enquiry
+            $dates = [];
+            if ($hallBooking->enquiry) {
+                $dates = $hallBooking->enquiry->event_dates ? json_decode($hallBooking->enquiry->event_dates, true) : [$hallBooking->enquiry->event_date];
+                $dates = array_filter($dates);
+            }
+            $numberOfDays = count($dates);
+
+            if ($hallBooking->enquiry && $hallBooking->enquiry->accessorie) {
+                $accessoryIds = json_decode($hallBooking->enquiry->accessorie, true);
+                if (is_array($accessoryIds)) {
+                    $accessories = \App\Models\Accessorie::whereIn('id', $accessoryIds)->get();
+                    $hallAccessories = $accessories->sum(function ($accessory) use ($totalHours, $numberOfDays) {
+                        $price = (float) ($accessory->price ?? 0);
+                        $hours = (float) ($accessory->hours ?? 1);
+                        if ($price <= 0 || $hours <= 0) return 0;
+                        $blocksPerDay = floor($totalHours / $hours);
+                        $pricePerDay = $price * max($blocksPerDay, 1);
+                        return $pricePerDay * $numberOfDays;
+                    });
+                    $totalAccessories += $hallAccessories;
+                }
+            }
+
+            // Calculate rent + GST for this hall
+            $hallSubtotal = ($hallBooking->total_rent ?? 0) + $hallAccessories;
+            $totalRentWithGst += $hallSubtotal * 1.18;
+        }
+
+        $rentAmount = $totalRent + $totalAccessories;
+        $depositAmount = $totalDeposit;
+        $grandTotal = $totalDeposit + $totalRentWithGst;
+
+        switch ($paymentType) {
+            case 'deposit':
+                // Combined deposit from all halls
+                return $depositAmount;
+
+            case 'rent':
+                // Combined rent + accessories + GST from all halls
+                return $totalRentWithGst;
+
+            case 'remaining':
+                // Calculate remaining amount based on successful payments for all halls in group
+                $paidAmount = 0;
+                foreach ($groupBookings as $hallBooking) {
+                    $successfulPayments = PaymentTransaction::where('booked_hall_id', $hallBooking->id)
+                        ->where('status', 'SUCCESS')
+                        ->get();
+
+                    foreach ($successfulPayments as $payment) {
+                        $paidAmount += $payment->amount;
+                    }
+                }
+
+                return max(0, $grandTotal - $paidAmount);
+
+            case 'full':
+            default:
+                // Grand total for all halls combined
+                return $grandTotal;
+        }
+    }
+
+    /**
      * Calculate total amount for booking (legacy method for backward compatibility)
      */
     private function calculateTotalAmount($bookedHall)
@@ -458,14 +563,14 @@ class PaymentController extends Controller
         // amount + merchantID + merchantTxnNo + transactionType
         $msg = $data['amount'] . $data['merchantID'] . $data['merchantTxnNo'] . $data['transactionType'];
 
-        \Log::info('🔐 Generating secure hash for status check:', [
+        Log::info('🔐 Generating secure hash for status check:', [
             'transaction_type' => $data['transactionType'],
             'message_string' => $msg,
             'secret_length' => strlen($secret)
         ]);
 
         $hash = hash_hmac('sha256', $msg, $secret);
-        \Log::info('🔑 Generated hash: ' . $hash);
+        Log::info('🔑 Generated hash: ' . $hash);
 
         return $hash;
     }
@@ -476,7 +581,7 @@ class PaymentController extends Controller
     public function handleWebhook(Request $request)
     {
         try {
-            \Log::info('Payment Webhook Received:', $request->all());
+            Log::info('Payment Webhook Received:', $request->all());
 
             $data = $request->all();
             $merchantTxnNo = $data['merchantTxnNo'] ?? null;
@@ -491,7 +596,7 @@ class PaymentController extends Controller
             $transaction = PaymentTransaction::where('merchant_txn_no', $merchantTxnNo)->first();
 
             if (!$transaction) {
-                \Log::error('Webhook: Transaction not found for merchant txn no: ' . $merchantTxnNo);
+                Log::error('Webhook: Transaction not found for merchant txn no: ' . $merchantTxnNo);
                 return response()->json(['status' => 'error', 'message' => 'Transaction not found'], 404);
             }
 
@@ -514,10 +619,11 @@ class PaymentController extends Controller
             if ($finalStatus === 'SUCCESS') {
                 $bookedHall = $transaction->bookedHall;
                 if ($bookedHall) {
-                    $bookedHall->update([
-                        'paid_amount' => $transaction->amount,
-                        'remaining_amount' => max(0, $bookedHall->total_rent - $transaction->amount)
-                    ]);
+                // Keep paid_amount as total committed amount, don't reduce it
+                // remaining_amount is calculated separately in views
+                $bookedHall->update([
+                    'remaining_amount' => 0
+                ]);
 
                     // Send WhatsApp notification for successful payment
                     $this->sendPaymentSuccessNotification($bookedHall, $transaction);
@@ -527,12 +633,89 @@ class PaymentController extends Controller
             return response()->json(['status' => 'success', 'message' => 'Webhook processed successfully']);
 
         } catch (\Exception $e) {
-            \Log::error('Webhook processing failed', [
+            Log::error('Webhook processing failed', [
                 'error' => $e->getMessage(),
                 'request_data' => $request->all()
             ]);
 
             return response()->json(['status' => 'error', 'message' => 'Webhook processing failed'], 500);
+        }
+    }
+
+    /**
+     * Record cash/check payment for booking
+     */
+    public function recordCashPayment(Request $request, $bookingId)
+    {
+        try {
+            // Find the booked hall
+            $bookedHall = BookedHall::with('enquiry')->findOrFail($bookingId);
+
+            // Get payment details from request
+            $paymentAmount = $request->input('amount');
+            $paymentType = $request->input('payment_type', 'cash'); // cash or check
+            $notes = $request->input('notes', '');
+
+            // For multi-hall bookings, get the total amount from all halls in the group
+            if ($bookedHall->group_code) {
+                $groupBookings = BookedHall::where('group_code', $bookedHall->group_code)->get();
+                $totalAmount = $groupBookings->sum('paid_amount');
+
+                // If no specific amount provided, use the total committed amount
+                if (!$paymentAmount) {
+                    $paymentAmount = $totalAmount;
+                }
+            } else {
+                // Single hall booking
+                $totalAmount = $bookedHall->paid_amount;
+
+                // If no specific amount provided, use the hall's committed amount
+                if (!$paymentAmount) {
+                    $paymentAmount = $totalAmount;
+                }
+            }
+
+            // Generate unique transaction number for cash payment
+            $txnNo = 'CASH' . now()->format('YmdHis') . rand(100, 999);
+
+            // Create payment transaction record
+            $transaction = PaymentTransaction::create([
+                'booked_hall_id' => $bookingId, // Use the representative booking ID
+                'merchant_txn_no' => $txnNo,
+                'amount' => $paymentAmount,
+                'customer_email' => $bookedHall->customer_email,
+                'customer_mobile' => $bookedHall->customer_phone,
+                'transaction_type' => strtoupper($paymentType), // CASH or CHECK
+                'status' => 'SUCCESS', // Cash payments are immediately successful
+                'payment_date' => now(),
+                'full_response' => [
+                    'payment_type' => $paymentType,
+                    'notes' => $notes,
+                    'recorded_by' => auth()->user()->name ?? 'Admin',
+                    'recorded_at' => now()->toISOString()
+                ]
+            ]);
+
+        Log::info('Cash payment recorded', [
+                'booking_id' => $bookingId,
+                'transaction_id' => $transaction->id,
+                'amount' => $paymentAmount,
+                'payment_type' => $paymentType
+            ]);
+
+            // Send WhatsApp notification for successful payment
+            // $this->sendPaymentSuccessNotification($bookedHall, $transaction);
+
+            return redirect()->back()->with('success', ucfirst($paymentType) . ' payment of ₹' . number_format($paymentAmount, 2) . ' recorded successfully.');
+
+        } catch (\Exception $e) {
+        Log::error('Cash payment recording failed', [
+                'booking_id' => $bookingId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Failed to record payment. Please try again.');
         }
     }
 
@@ -605,8 +788,8 @@ class PaymentController extends Controller
             $curlError = curl_error($ch);
             curl_close($ch);
 
-            // Log the WhatsApp notification attempt
-            Log::info("📤 Payment Success WhatsApp Notification", [
+            //Log the WhatsApp notification attempt
+        Log::info("📤 Payment Success WhatsApp Notification", [
                 'contact' => $contactNumber,
                 'customer_name' => $customerName,
                 'hall_name' => $hallName,
@@ -620,13 +803,13 @@ class PaymentController extends Controller
             ]);
 
             if ($httpCode == 200) {
-                Log::info("✅ Payment success WhatsApp notification sent to {$contactNumber}");
+            Log::info("✅ Payment success WhatsApp notification sent to {$contactNumber}");
             } else {
-                Log::error("❌ Payment success WhatsApp notification failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
+            Log::error("❌ Payment success WhatsApp notification failed for {$contactNumber}. HTTP {$httpCode} - {$response}");
             }
 
         } catch (\Exception $e) {
-            Log::error('❌ Failed to send payment success WhatsApp notification', [
+        Log::error('❌ Failed to send payment success WhatsApp notification', [
                 'error' => $e->getMessage(),
                 'booking_id' => $bookedHall->id,
                 'customer_phone' => $bookedHall->customer_phone,

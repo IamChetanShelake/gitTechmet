@@ -84,7 +84,7 @@
             </li> -->
 
             <li class="nav-item">
-                <a class="nav-link {{ Request::is('admin/payment-transactions*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('admin.payment-transactions.index')}}">
+                <a class="nav-link {{ Request::is('admin/payment-transactions*') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 14px;"   href="{{route('admin.payment-transactions.index')}}">
                     <i class="material-symbols-rounded opacity-5">payments</i>
                     <span class="nav-link-text ms-1">Payment Transactions</span>
                 </a>
@@ -263,6 +263,13 @@
                 <a class="nav-link {{ Request::is('AdminHallEnquiry') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('AdminHallEnquiry')}}">
                     <i class="material-symbols-rounded opacity-5">help</i>
                     <span class="nav-link-text ms-1">Hall Enquirys</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link {{ Request::is('admin/rules-prints') ? 'active bg-gradient-dark text-white' : 'text-dark' }}"  style="font-size: 16px;"   href="{{route('admin.rules-prints')}}">
+                    <i class="material-symbols-rounded opacity-5">description</i>
+                    <span class="nav-link-text ms-1">Rules & Regulations</span>
                 </a>
             </li>
 

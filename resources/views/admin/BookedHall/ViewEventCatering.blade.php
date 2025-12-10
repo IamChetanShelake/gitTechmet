@@ -134,6 +134,7 @@
             @foreach($eventServices as $service)
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
+                    {{-- <h6 class="card-title">{{ $service->bookedHall->hall_name ?? 'Unknown Hall' }}</h6> --}}
                     @if(!empty($service->item_names))
                         <p><strong>Items:</strong> {{ implode(', ', $service->item_names) }}</p>
                     @endif
@@ -179,7 +180,8 @@
             @foreach($cateringServices as $food)
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <h5 class="card-title">{{ $food->food_item }}</h5>
+                    {{-- <h6 class="card-title">{{ $food->bookedHall->hall_name ?? 'Unknown Hall' }}</h6> --}}
+                    <h6 class="card-subtitle mb-2 text-muted">{{ $food->food_item }}</h6>
 
                     @if(!empty($food->item_names))
                         <p><strong>Items:</strong> {{ implode(', ', $food->item_names) }}</p>

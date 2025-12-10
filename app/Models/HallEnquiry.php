@@ -14,6 +14,7 @@ class HallEnquiry extends Model
     protected $table = 'hallenquirys';
 
     protected $fillable = [
+        'group_code',
         'name',
         'organization',
         'gst_no',
@@ -24,12 +25,24 @@ class HallEnquiry extends Model
         'event_type',
         'hall',
         'event_date',
+        'event_dates',
         'duration',
         'start_time',
         'end_time',
         'expected_audience',
         'stage_chairs_count',
         'hall_chairs_count',
+        'rent_amount',
+        'deposit',
+        'id_proof',
+        'event_setup',
+        'special_note',
+        'accessorie',
+        'vendor',
+        'quotation_file',
+        'rules_print_file',
+        'sign_image',
+        'typed_signature',
         'cancelled_at',
     ];
 

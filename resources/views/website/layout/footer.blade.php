@@ -64,6 +64,7 @@
 
 <!-- Javascript Files
 ================================================== -->
+<script src="{{asset('website/assets/js/bootstrap.min.js')}}"></script>
 <script src="{{asset('website/assets/js/plugins.js')}}"></script>
 <script src="{{asset('website/assets/js/designesia.js')}}"></script>
 <script src="{{asset('website/assets/js/swiper.js')}}"></script>

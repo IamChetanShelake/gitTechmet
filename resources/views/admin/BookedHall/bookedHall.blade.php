@@ -59,6 +59,32 @@
                     });
                 }
             }
+
+            function cancelGroupBooking(groupCode) {
+                if (confirm('Are you sure you want to cancel all bookings in this group? This action cannot be undone.')) {
+                    // Send AJAX request to cancel the group booking
+                    fetch(`/admin/cancel-group-booking/${groupCode}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Group booking cancelled successfully.');
+                            location.reload(); // Reload the page to reflect changes
+                        } else {
+                            alert('Failed to cancel group booking: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while cancelling the group booking.');
+                    });
+                }
+            }
         </script>
 
         <!-- Add Button -->
@@ -84,41 +110,77 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($bookedHalls as $index => $bookedHall)
-                            @php
-                                // Calculate total amount first (Hall + Accessories + Deposit)
-                                $totalAmount = ($bookedHall->total_rent ?? 0) + ($bookedHall->total_deposit ?? 0);
-                                if ($bookedHall->start_time && $bookedHall->end_time) {
-                                    $startTime = \Carbon\Carbon::createFromFormat('H:i:s', $bookedHall->start_time . ':00');
-                                    $endTime = \Carbon\Carbon::createFromFormat('H:i:s', $bookedHall->end_time . ':00');
-                                    $totalHours = $startTime->diffInHours($endTime, false);
+                        @php
+                            // Group booked halls by group_code for multi-hall bookings
+                            $groupedBookings = collect();
+                            $processedGroups = [];
 
-                                    // Get accessories if any from enquiry
-                                    $accessoriesAmount = 0;
-                                    if ($bookedHall->enquiry && $bookedHall->enquiry->accessorie) {
-                                        $accessoryIds = json_decode($bookedHall->enquiry->accessorie, true);
-                                        if (is_array($accessoryIds)) {
-                                            $accessories = \App\Models\Accessorie::whereIn('id', $accessoryIds)->get();
-                                            // Calculate total accessories price based on blocks of hours
-                                            $accessoriesAmount = $accessories->sum(function ($accessory) use ($totalHours) {
-                                                $price = (float) ($accessory->price ?? 0);
-                                                $hours = (float) ($accessory->hours ?? 1);
-                                                if ($price <= 0 || $hours <= 0) return 0;
-                                                $blocks = floor($totalHours / $hours);
-                                                return $price * max($blocks, 1); // Minimum 1 block
-                                            });
-                                        }
-                                    }
-
-                                    $totalAmount = ($bookedHall->total_rent ?? 0) + $accessoriesAmount + ($bookedHall->total_deposit ?? 0);
+                            foreach($bookedHalls as $bookedHall) {
+                                if ($bookedHall->group_code && !in_array($bookedHall->group_code, $processedGroups)) {
+                                    // This is the first booking we encounter for this group
+                                    $groupBookings = $bookedHalls->where('group_code', $bookedHall->group_code);
+                                    $groupedBookings->push([
+                                        'is_group' => true,
+                                        'group_code' => $bookedHall->group_code,
+                                        'bookings' => $groupBookings,
+                                        'representative' => $groupBookings->first()
+                                    ]);
+                                    $processedGroups[] = $bookedHall->group_code;
+                                } elseif (!$bookedHall->group_code) {
+                                    // Single hall booking
+                                    $groupedBookings->push([
+                                        'is_group' => false,
+                                        'group_code' => null,
+                                        'bookings' => collect([$bookedHall]),
+                                        'representative' => $bookedHall
+                                    ]);
                                 }
+                            }
+                        @endphp
 
-                                // Calculate remaining amount
-                                $paidAmount = \App\Models\PaymentTransaction::where('booked_hall_id', $bookedHall->id)
-                                    ->where('status', 'SUCCESS')
-                                    ->sum('amount');
-                                $remainingAmount = $totalAmount - $paidAmount;
-                                $remainingAmount = max(0, $remainingAmount);
+                        @foreach($groupedBookings as $index => $bookingGroup)
+                            @php
+                                $isMultiHall = $bookingGroup['is_group'];
+                                $groupBookings = $bookingGroup['bookings'];
+                                $representativeBooking = $bookingGroup['representative'];
+
+                                // Total amount is the sum of committed amounts (paid_amount from booked_halls)
+                                $totalAmount = $groupBookings->sum('paid_amount');
+
+                                // Calculate remaining amount based on actual payments made
+                                $totalPaid = 0;
+                                foreach ($groupBookings as $bookedHall) {
+                                    $paidAmount = \App\Models\PaymentTransaction::where('booked_hall_id', $bookedHall->id)
+                                        ->where('status', 'SUCCESS')
+                                        ->sum('amount');
+                                    $totalPaid += $paidAmount;
+                                }
+                                $remainingAmount = max(0, $totalAmount - $totalPaid);
+
+                                // Determine overall payment status based on payment amounts
+                                $hasFailedPayment = $groupBookings->contains(function($booking) {
+                                    return $booking->payment_status == 'FAILED';
+                                });
+                                $hasPendingPayment = $groupBookings->contains(function($booking) {
+                                    return in_array($booking->payment_status, ['PENDING', 'initiated']);
+                                });
+
+                                if ($totalPaid >= $totalAmount) {
+                                    $overallPaymentStatus = 'Fully Paid';
+                                    $paymentDate = $groupBookings->where('payment_status', 'SUCCESS')->first()->payment_date ?? null;
+                                } elseif ($totalPaid > 0) {
+                                    $overallPaymentStatus = 'Partially Paid';
+                                    $paymentDate = null;
+                                } elseif ($hasPendingPayment) {
+                                    $overallPaymentStatus = 'Pending';
+                                    $paymentDate = null;
+                                } elseif ($hasFailedPayment) {
+                                    $overallPaymentStatus = 'Failed';
+                                    $paymentDate = null;
+                                } else {
+                                    $overallPaymentStatus = 'Not Initiated';
+                                    $paymentDate = null;
+                                }
                             @endphp
                             <tr>
                                 <!-- Sr No. -->
@@ -131,36 +193,63 @@
                                 <!-- Customer Name -->
                                 <td>
                                     <div class="d-flex px-2 py-1">
-                                        <h6 class="mb-0 text-sm">{{ $bookedHall->customer_name }}</h6>
+                                        <h6 class="mb-0 text-sm">{{ $representativeBooking->customer_name }}</h6>
                                     </div>
                                 </td>
 
                                 <!-- Hall Name -->
-                                <td>
+                                <td style="max-width: 260px;">
                                     <div class="d-flex px-2 py-1">
-                                        <h6 class="mb-0 text-sm">{{ $bookedHall->hall_name }}</h6>
+                                        @if($isMultiHall)
+                                            <div title="{{ $groupBookings->pluck('hall_name')->join(', ') }}">
+                                                <h6 class="mb-1 text-sm text-truncate" style="max-width: 180px;">
+                                                    {{ $groupBookings->first()->hall_name }}
+                                                    @if($groupBookings->count() > 1)
+                                                        <small class="text-muted">+{{ $groupBookings->count() - 1 }} more</small>
+                                                    @endif
+                                                </h6>
+                                                <small class="text-muted">{{ $groupBookings->count() }} halls</small>
+                                            </div>
+                                        @else
+                                            <h6 class="mb-0 text-sm">{{ $representativeBooking->hall_name }}</h6>
+                                        @endif
                                     </div>
                                 </td>
 
                                 <!-- View Details -->
                                 <td class="align-middle text-center">
-                                    <a href="{{ route('View.Booking', $bookedHall->id) }}" class="btn btn-secondary">
-                                        View
-                                    </a>
+                                    @if($isMultiHall)
+                                        <!-- Show first booking's view link for multi-hall -->
+                                        <a href="{{ route('View.Booking', $representativeBooking->id) }}" class="btn btn-secondary">
+                                            View Group
+                                        </a>
+                                    @else
+                                        <a href="{{ route('View.Booking', $representativeBooking->id) }}" class="btn btn-secondary">
+                                            View
+                                        </a>
+                                    @endif
                                 </td>
 
                                 <!-- Vendors -->
                                 <td class="align-middle text-center">
                                     @php
-                                        $hasConfirmedService = $eventServices->where('booked_hall_id', $bookedHall->id)->where('status', 'confirmed')->isNotEmpty() ||
-                                                               $cateringServices->where('booked_hall_id', $bookedHall->id)->where('status', 'confirmed')->isNotEmpty();
+                                        $hasConfirmedService = false;
+                                        $hasApprovedService = false;
 
-                                        $hasApprovedService = $eventServices->where('booked_hall_id', $bookedHall->id)->where('status', 'approved')->isNotEmpty() ||
-                                                               $cateringServices->where('booked_hall_id', $bookedHall->id)->where('status', 'approved')->isNotEmpty();
+                                        foreach($groupBookings as $booking) {
+                                            $confirmed = $eventServices->where('booked_hall_id', $booking->id)->where('status', 'confirmed')->isNotEmpty() ||
+                                                        $cateringServices->where('booked_hall_id', $booking->id)->where('status', 'confirmed')->isNotEmpty();
+
+                                            $approved = $eventServices->where('booked_hall_id', $booking->id)->where('status', 'approved')->isNotEmpty() ||
+                                                       $cateringServices->where('booked_hall_id', $booking->id)->where('status', 'approved')->isNotEmpty();
+
+                                            if ($confirmed) $hasConfirmedService = true;
+                                            if ($approved) $hasApprovedService = true;
+                                        }
                                     @endphp
 
                                     @if($hasConfirmedService)
-                                        <a href="{{ route('View.EventCatering', $bookedHall->id) }}" class="btn btn-info">
+                                        <a href="{{ route('View.EventCatering', $representativeBooking->id) }}" class="btn btn-info">
                                             View Event / Catering
                                         </a>
                                     @elseif ($hasApprovedService)
@@ -176,23 +265,28 @@
 
                                 <!-- Payment Status -->
                                 <td class="align-middle text-center">
-                                    @if($bookedHall->payment_status == 'SUCCESS')
+                                    @if($overallPaymentStatus == 'Fully Paid')
                                         <span class="badge bg-success px-3 py-2">
                                             <i class="fas fa-check-circle me-1"></i>
-                                            Paid
+                                            Fully Paid
                                         </span>
-                                        @if($bookedHall->payment_date)
-                                            <br><small class="text-muted">{{ $bookedHall->payment_date->format('d M Y') }}</small>
+                                        @if($paymentDate)
+                                            <br><small class="text-muted">{{ $paymentDate->format('d M Y') }}</small>
                                         @endif
-                                    @elseif($bookedHall->payment_status == 'FAILED')
-                                        <span class="badge bg-danger px-3 py-2">
-                                            <i class="fas fa-times-circle me-1"></i>
-                                            Failed
+                                    @elseif($overallPaymentStatus == 'Partially Paid')
+                                        <span class="badge bg-warning px-3 py-2">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Partially Paid
                                         </span>
-                                    @elseif($bookedHall->payment_status == 'PENDING' || $bookedHall->payment_status == 'initiated')
+                                    @elseif($overallPaymentStatus == 'Pending')
                                         <span class="badge bg-warning px-3 py-2">
                                             <i class="fas fa-clock me-1"></i>
                                             Pending
+                                        </span>
+                                    @elseif($overallPaymentStatus == 'Failed')
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="fas fa-times-circle me-1"></i>
+                                            Failed
                                         </span>
                                     @else
                                         <span class="badge bg-secondary px-3 py-2">
@@ -218,7 +312,12 @@
 
                                 <!-- Status -->
                                 <td class="align-middle text-center">
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="cancelBooking({{ $bookedHall->id }})">Cancel Booking</button>
+                                    @if($isMultiHall)
+                                        <!-- For multi-hall bookings, show cancel option for the group -->
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="cancelGroupBooking('{{ $bookingGroup['group_code'] }}')">Cancel Group</button>
+                                    @else
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="cancelBooking({{ $representativeBooking->id }})">Cancel Booking</button>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

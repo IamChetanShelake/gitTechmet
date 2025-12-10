@@ -7,6 +7,82 @@
     width: 100%;   /* For responsive width */
     height: 200px; /* Slightly taller for mobile fingers */
 }
+
+    /* Custom button styles */
+    .custom-btn {
+        padding: 6px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.2s ease;
+        background-color: #fff;
+        color: #495057;
+        margin: 2px;
+    }
+
+    .custom-btn:hover {
+        text-decoration: none;
+        color: #495057;
+    }
+
+    .custom-btn-primary {
+        border-color: #007bff;
+        color: #007bff;
+    }
+
+    .custom-btn-primary:hover {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .custom-btn-danger {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+
+    .custom-btn-danger:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    /* Modal styles */
+    .modal {
+        z-index: 1055 !important;
+    }
+
+    .modal-dialog {
+        z-index: 1060 !important;
+    }
+
+    .modal-content {
+        z-index: 1065 !important;
+        position: relative;
+    }
+
+    /* Custom backdrop for modal */
+    .modal-backdrop-custom {
+        position: fixed;
+           top: -81px;
+    left: 0;
+    width: 100%;
+    height: 167vh;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(2px);
+        z-index: 1040;
+        display: none;
+    }
+
+    .modal-backdrop-custom.show {
+        display: block;
+    }
+
+    /* Ensure modal content is always on top */
+    #rulesModal.show .modal-content {
+        z-index: 1070 !important;
+    }
 </style>
     <!-- content begin -->
     <div class="no-bottom no-top" id="content">
@@ -29,10 +105,24 @@
             </div>
             <div class="de-overlay"></div>
         </section>
+
+
+
         <div class="p-3">
                     @if(session('success'))
                         <div class="alert alert-success" id="successMessage">
                             {{ session('success') }}
+                        </div>
+                    @endif
+
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <h5>Please fix the following errors:</h5>
+                            <ul class="mb-0">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                     @endif
                 </div>
@@ -216,23 +306,17 @@
                                                 <input type="text" name="referred_by" id="referred_by" class="form-control" placeholder="Referred By" value="{{ old('referred_by') }}">
                                             </div>
 
-                                            <div class="p-2 border shadow-sm bg-white">
-                                                <label class=" text-dark mb-2">Vendor Services:</label><br>
-
-                                                <div class="form-check form-check-inline mt-2">
-                                                    <input class="form-check-input" type="checkbox" name="vendor[]"
-                                                        value="event"
-                                                        {{ is_array(old('vendor', json_decode($hallEnquiry->vendor ?? '[]', true))) && in_array('event', old('vendor', json_decode($hallEnquiry->vendor ?? '[]', true))) ? 'checked' : '' }}>
-                                                    <label class="form-check-label">Event</label>
-                                                </div>
-
-                                                <div class="form-check form-check-inline mt-2">
-                                                    <input class="form-check-input" type="checkbox" name="vendor[]"
-                                                        value="catering"
-                                                        {{ is_array(old('vendor', json_decode($hallEnquiry->vendor ?? '[]', true))) && in_array('catering', old('vendor', json_decode($hallEnquiry->vendor ?? '[]', true))) ? 'checked' : '' }}>
-                                                    <label class="form-check-label">Catering</label>
-                                                </div>
+                                            <!-- Vendor Services Section -->
+                                            <div>
+                                                <h5>Our Vendor Services:</h5>
+                                                    <ul class="list-unstyled" style="font-size: 18px; line-height: 2;padding-left: 10px;margin-bottom: 0px;">
+                                                        <li><i class="fa fa-calendar-check-o text-primary me-2"></i>Event Services</li>
+                                                        <li><i class="fa fa-utensils text-primary me-2"></i>Catering Services</li>
+                                                        <li><i class="fa fa-camera text-primary me-2"></i>Photography</li>
+                                                    </ul>
                                             </div>
+
+
 
                                         </div>
 
@@ -249,72 +333,26 @@
 
 
                                             <div class="mb-3" style="background-color: #fff !important;">
-                                                <select name="hall" id="hall" class="form-control" required>
-                                                    <option value="" selected disabled>-- Select Hall --</option>
+                                                <label class="form-label">Select Halls *</label>
+                                                <div id="hall-selection" style="padding-left: 20px;">
                                                     @foreach ($halls as $hall)
-                                                        <option value="{{ $hall->name }}" data-hall-id="{{ $hall->id }}"
-                                                            {{ old('hall') == $hall->name ? 'selected' : '' }}>
-                                                            {{ $hall->name }}
-                                                        </option>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input hall-checkbox" type="checkbox"
+                                                                   name="selected_halls[]" value="{{ $hall->id }}"
+                                                                   id="hall_{{ $hall->id }}"
+                                                                   {{ in_array($hall->id, old('selected_halls', [])) ? 'checked' : '' }}>
+                                                            <label class="form-check-label" for="hall_{{ $hall->id }}">
+                                                                {{ $hall->name }}
+                                                            </label>
+                                                        </div>
                                                     @endforeach
-                                                </select>
-                                                @error('hall')
+                                                </div>
+                                                @error('selected_halls')
                                                     <div class="text-danger">{{ $message }}</div>
                                                 @enderror
                                             </div>
 
-                                            <!-- Hidden input field to store hall_id -->
-                                            <input type="hidden" name="hall_id" id="hall_id">
 
-
-
-                                                <script>
-                                                document.getElementById("hall").addEventListener("change", function() {
-                                                    var selectedOption = this.options[this.selectedIndex];
-                                                    var hallName = selectedOption.value;
-                                                    document.getElementById("hall_id").value = selectedOption.getAttribute("data-hall-id");
-                                                    document.getElementById("hall-name").textContent = hallName;
-                                                });
-                                                </script>
-
-
-                                            <div class="mb-3">
-                                                <input type="date" name="event_date" id="event_date" class="form-control" value="{{ old('event_date') }}" required>
-                                                @error('event_date')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            <div class="mb-3" style="background-color: #fff !important;">
-                                                <select name="duration" id="duration" class="form-control" required>
-                                                    <option value="full_day" {{ old('duration') == 'Full Day' ? 'selected' : '' }}>Full Day</option>
-                                                    <option value="half_day_morning" {{ old('duration') == 'Half Day (Morning)' ? 'selected' : '' }}>Half Day (Morning)</option>
-                                                    <option value="half_day_evening" {{ old('duration') == 'Half Day (Evening)' ? 'selected' : '' }}>Half Day (Evening)</option>
-                                                </select>
-                                                @error('duration')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="start_time" class="form-label">Start Time *</label>
-                                                <input type="time" name="start_time" id="start_time" class="form-control" value="{{ old('start_time') }}" required>
-                                                @error('start_time')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="end_time" class="form-label">End Time *</label>
-                                                <input type="time" name="end_time" id="end_time" class="form-control" value="{{ old('end_time') }}" required>
-                                                @error('end_time')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                            <div class="mb-3">
-                                                <input type="number" name="expected_audience" id="expected_audience" class="form-control"
-                                                    placeholder="Expected No. of Audience *" value="{{ old('expected_audience') }}" required>
-                                                @error('expected_audience')
-                                                    <div class="text-danger">{{ $message }}</div>
-                                                @enderror
-                                            </div>
 
                                             <div class="mb-3">
                                                 <label for="signature_type" class="form-label">Select Signature Type *</label>
@@ -357,15 +395,136 @@
 
                                         </div>
 
+
+
+                                        <!-- Hall Details Table -->
+                                        <div class="col-mb-12">
+                                            <div id="hall-details-container" class="mt-4">
+                                                <h5>Hall Details</h5>
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered" id="hall-details-table" style="display: none;">
+                                                        <thead class="table-dark">
+                                                            <tr>
+                                                                <th>Hall Name</th>
+                                                                <th>Event Dates</th>
+                                                                <th>Duration/Session</th>
+                                                                <th>Expected Audience</th>
+                                                                <th>Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="hall-table-body">
+                                                            <!-- Hall rows will be added here dynamically -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <!-- Template for hall table row (hidden) -->
+                                            <table id="hall-row-template" style="display: none;">
+                                                <tr class="hall-table-row" data-hall-id="{hall_id}">
+                                                    <td class="hall-name-cell">
+                                                        <strong class="hall-name-display"></strong>
+                                                        <input type="hidden" name="hall_details[{hall_id}][hall_name]" class="hall-name-input">
+                                                    </td>
+                                                    <td class="dates-cell">
+                                                        <div class="date-selection-container">
+                                                            <div class="date-input-group mb-1">
+                                                                <input type="date" name="hall_details[{hall_id}][event_dates][]" class="form-control form-control-sm hall-event-date">
+                                                            </div>
+                                                        </div>
+                                                        <button type="button" style="background-color: white; border: 1px solid #007bff; color: #007bff; padding: 2px 8px; font-size: 12px; border-radius: 3px; cursor: pointer;" class="add-date">+ Add Date</button>
+                                                    </td>
+                                                    <td class="duration-cell">
+                                                        <!-- Duration selection based on hall type -->
+                                                        <div class="hall-duration-section">
+                                                            <select name="hall_details[{hall_id}][duration]" class="form-control form-control-sm hall-duration">
+                                                                <!-- Options will be populated based on hall type -->
+                                                            </select>
+                                                        </div>
+                                                        <!-- Session selection for Gurudakshina hall -->
+                                                        <div class="hall-session-section" style="display: none;">
+                                                            <select name="hall_details[{hall_id}][session]" class="form-control form-control-sm hall-session">
+                                                                <option value="">-- Select Session --</option>
+                                                                <option value="morning">Morning Session (8:00 AM - 2:00 PM)</option>
+                                                                <option value="evening">Evening Session (4:00 PM - 9:00 PM)</option>
+                                                                <option value="full_day">Full Day (8:00 AM - 9:00 PM)</option>
+                                                            </select>
+                                                        </div>
+                                                        <!-- Time inputs for Art Gallery -->
+                                                        <div class="hall-time-section mt-1" style="display: none;">
+                                                            <input type="time" name="hall_details[{hall_id}][start_time]" class="form-control form-control-sm hall-start-time mb-1" placeholder="Start Time">
+                                                            <input type="time" name="hall_details[{hall_id}][end_time]" class="form-control form-control-sm hall-end-time" placeholder="End Time">
+                                                        </div>
+                                                    </td>
+                                                    <td class="audience-cell">
+                                                        <input type="number" name="hall_details[{hall_id}][expected_audience]" class="form-control form-control-sm hall-expected-audience" placeholder="Audience *">
+                                                    </td>
+
+                                                    <td class="actions-cell">
+                                                        <button type="button" style="background-color: white; border: 1px solid #dc3545; color: #dc3545; padding: 4px 12px; font-size: 12px; border-radius: 3px; cursor: pointer;" class="remove-hall">Remove</button>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+
                                         <!-- Agreement Checkbox -->
                                         <div class="col-md-12 text-center mt-3">
                                             <div class="form-check mb-3">
-                                                <input type="checkbox" class="form-check-input" id="agreement" name="agreement" required>
+                                                <input type="checkbox" class="form-check-input" id="agreement" name="agreement">
                                                 <label class="form-check-label" for="agreement">
-                                                    I have read, understood, and agreed to the rules and regulations for <span id="hall-name">___</span> hall. Failing which booking shall be cancelled without prior notice and no refund claim will be entertained. This enquiry form is not a final booking or confirmation. Confirmation will be communicated on given contact no. or e-mail id.
+                                                    I have read, understood, and agreed to the <a href="#" id="rules-link" style="color: #007bff; text-decoration: underline;">rules and regulations</a> for <span id="hall-name">___</span> hall. Failing which booking shall be cancelled without prior notice and no refund claim will be entertained. This enquiry form is not a final booking or confirmation. Confirmation will be communicated on given contact no. or e-mail id.
                                                 </label>
                                             </div>
                                             <button type="submit" id="send_message" style="background-color: #AB8965; color: white; height: 40px; width: 100px;">Submit</button>
+                                        </div>
+
+                                        <!-- Custom Backdrop -->
+                                        <div class="modal-backdrop-custom" id="customBackdrop"></div>
+
+                                        <!-- Rules and Regulations Modal -->
+                                        <div class="modal fade" id="rulesModal" tabindex="-1" role="dialog" aria-labelledby="rulesModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="rulesModalLabel">Rules and Regulations</h5>
+                                                        <button type="button" class="close" id="closeModalBtn" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                                                        <h6>General Rules and Regulations for Hall Booking:</h6>
+                                                        <ol>
+                                                            <li>All bookings are subject to availability and confirmation by the management.</li>
+                                                            <li>Full payment must be made at the time of booking confirmation.</li>
+                                                            <li>Cancellation charges will apply as per the policy mentioned in the booking confirmation.</li>
+                                                            <li>The hall must be used only for the purpose specified in the booking.</li>
+                                                            <li>Any damage to the hall property or equipment will be charged to the customer.</li>
+                                                            <li>Decorations must be approved by the management in advance.</li>
+                                                            <li>Noise levels must be maintained within permissible limits.</li>
+                                                            <li>Smoking and consumption of alcohol is strictly prohibited inside the premises.</li>
+                                                            <li>The customer is responsible for the behavior of all guests and attendees.</li>
+                                                            <li>Management reserves the right to cancel any booking without prior notice in case of emergencies.</li>
+                                                            <li>Parking is available on a first-come, first-served basis.</li>
+                                                            <li>Outside catering is allowed only with prior permission from the management.</li>
+                                                            <li>The hall should be vacated by the agreed time; late checkout may incur additional charges.</li>
+                                                            <li>All waste must be disposed of properly; cleaning charges may apply if the hall is left in an unacceptable condition.</li>
+                                                            <li>The management is not responsible for any loss of personal belongings.</li>
+                                                        </ol>
+
+                                                        <h6>Additional Terms:</h6>
+                                                        <ul>
+                                                            <li>This enquiry form does not constitute a confirmed booking.</li>
+                                                            <li>Final confirmation will be communicated via phone or email.</li>
+                                                            <li>All terms and conditions are subject to change without notice.</li>
+                                                            <li>By agreeing to these rules, you acknowledge that you have read and understood all terms.</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" style="background-color: gray; color: white; height: 40px; width: 100px;" id="closeModalBtn2">Close</button>
+                                                        <button type="button" style="background-color: #AB8965; color: white; height: 40px; width: 100px;" id="agreeBtn">I Agree</button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </form>
@@ -385,6 +544,298 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Hall selection functionality
+            const hallCheckboxes = document.querySelectorAll('.hall-checkbox');
+            const hallDetailsTable = document.getElementById('hall-details-table');
+            const hallTableBody = document.getElementById('hall-table-body');
+            const hallRowTemplate = document.getElementById('hall-row-template');
+            const hallsData = @json($halls->pluck('name', 'id'));
+            const hallRulesData = @json($hallRules ?? []);
+
+            // Function to determine hall type
+            function getHallType(hallName) {
+                const name = hallName.toLowerCase();
+                if (name.includes('gurudakshina')) {
+                    return 'gurudakshina';
+                } else if (name.includes('art gallery') || name.includes('art') && name.includes('gallery')) {
+                    return 'art_gallery';
+                } else {
+                    return 'other';
+                }
+            }
+
+            // Function to setup hall-specific options for a table row
+            function setupHallOptionsForRow(row, hallName) {
+                const hallType = getHallType(hallName);
+                const durationSelect = row.querySelector('.hall-duration');
+                const sessionSection = row.querySelector('.hall-session-section');
+                const timeSection = row.querySelector('.hall-time-section');
+                const sessionSelect = row.querySelector('.hall-session');
+
+                // Clear existing options
+                durationSelect.innerHTML = '';
+
+                if (hallType === 'gurudakshina') {
+                    // For Gurudakshina: hide duration and time, show session
+                    const durationSection = row.querySelector('.hall-duration-section');
+                    durationSection.style.display = 'none';
+                    sessionSection.style.display = 'block';
+                    timeSection.style.display = 'none';
+
+                    // Only set required for visible session select
+                    sessionSelect.required = true;
+                    // Make sure duration select is not required when hidden
+                    durationSelect.required = false;
+                } else if (hallType === 'art_gallery') {
+                    // For Art Gallery: show only full day option
+                    const durationSection = row.querySelector('.hall-duration-section');
+                    durationSection.style.display = 'block';
+                    sessionSection.style.display = 'none';
+                    timeSection.style.display = 'block';
+
+                    durationSelect.innerHTML = '<option value="full_day">Full Day</option>';
+                    durationSelect.value = 'full_day';
+                    durationSelect.required = true;
+                    // Make sure session select is not required when hidden
+                    sessionSelect.required = false;
+                } else {
+                    // For other halls: show morning, afternoon, evening with custom start/end times
+                    const durationSection = row.querySelector('.hall-duration-section');
+                    durationSection.style.display = 'block';
+                    sessionSection.style.display = 'none';
+                    timeSection.style.display = 'block'; // Show time inputs for custom slots
+
+                    durationSelect.innerHTML = `
+                        <option value="">-- Select Duration --</option>
+                        <option value="half_day_morning">Morning</option>
+                        <option value="half_day_afternoon">Afternoon</option>
+                        <option value="half_day_evening">Evening</option>
+                    `;
+                    durationSelect.required = true;
+                    // Make sure session select is not required when hidden
+                    sessionSelect.required = false;
+                }
+            }
+
+            // Function to create hall table row
+            function createHallTableRow(hallId, hallName) {
+                console.log('Creating hall table row for hall ID:', hallId, 'Name:', hallName);
+
+                const templateRow = hallRowTemplate.querySelector('tr').cloneNode(true);
+                templateRow.setAttribute('data-hall-id', hallId);
+
+                // Update hall name display
+                templateRow.querySelector('.hall-name-display').textContent = hallName;
+
+                // Update form field names and IDs
+                const inputs = templateRow.querySelectorAll('input, select');
+                inputs.forEach(input => {
+                    if (input.name && input.name.includes('{hall_id}')) {
+                        input.name = input.name.replace('{hall_id}', hallId);
+                    }
+                    if (input.id && input.id.includes('{hall_id}')) {
+                        input.id = input.id.replace('{hall_id}', hallId);
+                    }
+
+                    // Add required attribute for common fields
+                    if (input.classList.contains('hall-event-date') ||
+                        input.classList.contains('hall-expected-audience')) {
+                        input.required = true;
+                    }
+
+                    // Handle hidden hall name input
+                    if (input.classList.contains('hall-name-input')) {
+                        input.value = hallName;
+                    }
+                });
+
+                // Update label 'for' attributes
+                const labels = templateRow.querySelectorAll('label');
+                labels.forEach(label => {
+                    if (label.htmlFor && label.htmlFor.includes('{hall_id}')) {
+                        label.htmlFor = label.htmlFor.replace('{hall_id}', hallId);
+                    }
+                });
+
+                hallTableBody.appendChild(templateRow);
+
+                // Show the table if it's hidden
+                hallDetailsTable.style.display = 'table';
+
+                // Setup hall-specific options (this will show/hide sections and set required attributes)
+                setupHallOptionsForRow(templateRow, hallName);
+
+                console.log('Hall table row created successfully');
+                return templateRow;
+            }
+
+            // Function to remove hall table row
+            function removeHallTableRow(hallId) {
+                const row = hallTableBody.querySelector(`tr[data-hall-id="${hallId}"]`);
+                if (row) {
+                    row.remove();
+
+                    // Hide table if no rows left
+                    if (hallTableBody.children.length === 0) {
+                        hallDetailsTable.style.display = 'none';
+                    }
+                }
+            }
+
+            // Function to update agreement hall names
+            function updateAgreementHallNames() {
+                const selectedHalls = document.querySelectorAll('.hall-checkbox:checked');
+                const hallNameSpan = document.getElementById('hall-name');
+
+                if (selectedHalls.length === 0) {
+                    hallNameSpan.textContent = '___';
+                } else if (selectedHalls.length === 1) {
+                    const hallId = selectedHalls[0].value;
+                    hallNameSpan.textContent = hallsData[hallId];
+                } else {
+                    // Multiple halls selected
+                    const hallNames = Array.from(selectedHalls).map(checkbox => hallsData[checkbox.value]);
+                    hallNameSpan.textContent = hallNames.join(', ');
+                }
+            }
+
+            // Handle checkbox changes
+            hallCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const hallId = this.value;
+                    const hallName = hallsData[hallId];
+
+                    if (this.checked) {
+                        createHallTableRow(hallId, hallName);
+                    } else {
+                        removeHallTableRow(hallId);
+                    }
+
+                    // Update agreement hall names
+                    updateAgreementHallNames();
+                });
+            });
+
+            // Handle remove hall button clicks
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-hall')) {
+                    e.preventDefault();
+                    const row = e.target.closest('tr');
+                    const hallId = row.getAttribute('data-hall-id');
+
+                    // Uncheck the corresponding checkbox
+                    const checkbox = document.getElementById(`hall_${hallId}`);
+                    if (checkbox) {
+                        checkbox.checked = false;
+                    }
+
+                    // Remove the row
+                    removeHallTableRow(hallId);
+                }
+            });
+
+            // Handle dynamic date addition
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('add-date')) {
+                    e.preventDefault();
+                    const row = e.target.closest('tr');
+                    const hallId = row.getAttribute('data-hall-id');
+                    const dateCell = e.target.closest('.dates-cell');
+                    const dateContainer = dateCell.querySelector('.date-selection-container');
+
+                    const dateInputGroup = document.createElement('div');
+                    dateInputGroup.className = 'date-input-group mb-1';
+                    dateInputGroup.innerHTML = `
+                        <input type="date" name="hall_details[${hallId}][event_dates][]" class="form-control form-control-sm hall-event-date" required>
+                        <button type="button" style="background-color: white; border: 1px solid #dc3545; color: #dc3545; padding: 1px 5px; font-size: 12px; border-radius: 3px; cursor: pointer; margin-left: 2px;" class="remove-date-btn">×</button>
+                    `;
+
+                    dateContainer.appendChild(dateInputGroup);
+                }
+
+                if (e.target.classList.contains('remove-date-btn')) {
+                    e.preventDefault();
+                    const dateInputGroup = e.target.closest('.date-input-group');
+                    const dateContainer = dateInputGroup.parentElement;
+                    const remainingGroups = dateContainer.querySelectorAll('.date-input-group');
+
+                    // Only remove if there's more than one date input
+                    if (remainingGroups.length > 1) {
+                        dateInputGroup.remove();
+                    }
+                }
+            });
+
+            // Initialize existing selections (for form validation errors)
+            const selectedHalls = @json(old('selected_halls', []));
+            const oldHallDetails = @json(old('hall_details', []));
+
+            selectedHalls.forEach(hallId => {
+                const checkbox = document.getElementById(`hall_${hallId}`);
+                const hallName = hallsData[hallId];
+                if (checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                    const row = createHallTableRow(hallId, hallName);
+
+                    // Repopulate existing hall details if available
+                    if (oldHallDetails[hallId]) {
+                        const hallData = oldHallDetails[hallId];
+
+                        // Set duration/session
+                        const durationSelect = row.querySelector('.hall-duration');
+                        const sessionSelect = row.querySelector('.hall-session');
+                        if (durationSelect && hallData.duration) {
+                            durationSelect.value = hallData.duration;
+                        }
+                        if (sessionSelect && hallData.session) {
+                            sessionSelect.value = hallData.session;
+                        }
+
+                        // Set times
+                        const startTimeInput = row.querySelector('.hall-start-time');
+                        const endTimeInput = row.querySelector('.hall-end-time');
+                        if (startTimeInput && hallData.start_time) {
+                            startTimeInput.value = hallData.start_time;
+                        }
+                        if (endTimeInput && hallData.end_time) {
+                            endTimeInput.value = hallData.end_time;
+                        }
+
+                        // Set audience
+                        const audienceInput = row.querySelector('.hall-expected-audience');
+                        if (audienceInput && hallData.expected_audience) {
+                            audienceInput.value = hallData.expected_audience;
+                        }
+
+                        // Vendor services now handled by admin only
+
+                        // Handle event dates - add extra date inputs if there are multiple dates
+                        if (hallData.event_dates && Array.isArray(hallData.event_dates)) {
+                            const dateContainer = row.querySelector('.date-selection-container');
+                            const existingDateInputs = dateContainer.querySelectorAll('.hall-event-date');
+
+                            // Fill existing date inputs first
+                            hallData.event_dates.forEach((date, index) => {
+                                if (date && date.trim() !== '') {
+                                    if (existingDateInputs[index]) {
+                                        existingDateInputs[index].value = date;
+                                    } else {
+                                        // Add new date input if needed
+                                        const dateInputGroup = document.createElement('div');
+                                        dateInputGroup.className = 'date-input-group mb-1';
+                                        dateInputGroup.innerHTML = `
+                                            <input type="date" name="hall_details[${hallId}][event_dates][]" class="form-control form-control-sm hall-event-date" value="${date}" required>
+                                            <button type="button" style="background-color: white; border: 1px solid #dc3545; color: #dc3545; padding: 1px 5px; font-size: 12px; border-radius: 3px; cursor: pointer; margin-left: 2px;" class="remove-date-btn">×</button>
+                                        `;
+                                        dateContainer.appendChild(dateInputGroup);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+
             const signatureType = document.getElementById('signature_type');
             const uploadSignature = document.getElementById('upload-signature');
             const textSignature = document.getElementById('text-signature');
@@ -489,14 +940,205 @@
                 digitalSignatureInput.value = '';
             });
 
+            // Rules and Regulations Modal functionality
+            const rulesLink = document.getElementById('rules-link');
+            const rulesModal = document.getElementById('rulesModal');
+            const customBackdrop = document.getElementById('customBackdrop');
+            const agreeBtn = document.getElementById('agreeBtn');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+            const closeModalBtn2 = document.getElementById('closeModalBtn2');
+            const agreementCheckbox = document.getElementById('agreement');
+
+            // Function to generate rules content for selected halls
+            function getSelectedHallsRules() {
+                const selectedHalls = document.querySelectorAll('.hall-checkbox:checked');
+                if (selectedHalls.length === 0) return 'Please select at least one hall to view rules.';
+
+                let content = '';
+
+                selectedHalls.forEach(hallCheckbox => {
+                    const hallId = hallCheckbox.value;
+                    const hallName = hallsData[hallId];
+
+                    // Find the corresponding rules in hallRulesData
+                    const hallRules = hallRulesData[hallName];
+                    if (hallRules) {
+                        content += `<h6>Rules and Regulations for ${hallName}:</h6>`;
+                        content += `<div class="hall-rules-content">${hallRules.replace(/\n/g, '<br>')}</div>`;
+                        content += '<hr>';
+                    } else {
+                        content += `<h6>Rules and Regulations for ${hallName}:</h6>`;
+                        content += '<p>Rules and regulations file not found.</p>';
+                        content += '<hr>';
+                    }
+                });
+
+                // Add general terms at the end
+                content += `
+                    <h6>Additional General Terms:</h6>
+                    <ul>
+                        <li>This enquiry form does not constitute a confirmed booking.</li>
+                        <li>Final confirmation will be communicated via phone or email.</li>
+                        <li>All terms and conditions are subject to change without notice.</li>
+                        <li>By agreeing to these rules, you acknowledge that you have read and understood all terms for the selected halls.</li>
+                    </ul>
+                `;
+
+                return content;
+            }
+
+            // Function to show modal
+            function showModal() {
+                const rulesContent = getSelectedHallsRules();
+                document.querySelector('.modal-body').innerHTML = rulesContent;
+
+                rulesModal.style.display = 'block';
+                rulesModal.classList.add('show');
+                customBackdrop.classList.add('show');
+                document.body.classList.add('modal-open');
+            }
+
+            // Function to hide modal
+            function hideModal() {
+                rulesModal.style.display = 'none';
+                rulesModal.classList.remove('show');
+                customBackdrop.classList.remove('show');
+                document.body.classList.remove('modal-open');
+            }
+
+            // Show modal when rules link is clicked
+            rulesLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                showModal();
+            });
+
+            // Show modal when agreement checkbox is clicked
+            agreementCheckbox.addEventListener('click', function(e) {
+                if (this.checked) {
+                    showModal();
+                }
+            });
+
+            // Handle close button clicks
+            closeModalBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                hideModal();
+            });
+
+            closeModalBtn2.addEventListener('click', function(e) {
+                e.preventDefault();
+                hideModal();
+            });
+
+            // Handle agreement button click
+            agreeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                agreementCheckbox.checked = true;
+                hideModal();
+            });
+
+            // Close modal when clicking on backdrop
+            rulesModal.addEventListener('click', function(e) {
+                if (e.target === rulesModal) {
+                    hideModal();
+                }
+            });
+
             // Form submission
             form.addEventListener('submit', function(e) {
-                const agreementCheckbox = document.getElementById('agreement');
+                console.log('Form submission started');
+
                 if (!agreementCheckbox.checked) {
                     alert('You must agree to the terms and conditions to submit the form.');
                     e.preventDefault();
                     return;
                 }
+                console.log('Agreement checkbox passed');
+
+                // Check if at least one hall is selected
+                const selectedHalls = document.querySelectorAll('.hall-checkbox:checked');
+                if (selectedHalls.length === 0) {
+                    alert('Please select at least one hall.');
+                    e.preventDefault();
+                    return;
+                }
+                console.log('Hall selection passed:', selectedHalls.length, 'halls selected');
+
+                // Validate that selected halls have details filled
+                let hasValidHallDetails = true;
+                selectedHalls.forEach(hallCheckbox => {
+                    const hallId = hallCheckbox.value;
+                    const hallRow = hallTableBody.querySelector(`tr[data-hall-id="${hallId}"]`);
+                    if (hallRow) {
+                        const dateInputs = hallRow.querySelectorAll('.hall-event-date');
+                        const audienceInput = hallRow.querySelector('.hall-expected-audience');
+                        const hallName = hallsData[hallId];
+                        const hallType = getHallType(hallName);
+
+                        // Check if at least one date is selected and filled
+                        let hasValidDate = false;
+                        let filledDateCount = 0;
+                        dateInputs.forEach(dateInput => {
+                            if (dateInput.value.trim() !== '') {
+                                hasValidDate = true;
+                                filledDateCount++;
+                            }
+                        });
+
+                        if (!hasValidDate) {
+                            alert(`Please select at least one event date for ${hallName}.`);
+                            hasValidHallDetails = false;
+                            e.preventDefault();
+                            return;
+                        }
+
+                        // Validate based on hall type
+                        if (hallType === 'gurudakshina') {
+                            const sessionSelect = hallRow.querySelector('.hall-session');
+                            if (!sessionSelect.value) {
+                                alert(`Please select a session for ${hallName}.`);
+                                hasValidHallDetails = false;
+                                e.preventDefault();
+                                return;
+                            }
+                            } else {
+                                const durationSelect = hallRow.querySelector('.hall-duration');
+
+                                if (!durationSelect.value) {
+                                    alert(`Please select a duration for ${hallName}.`);
+                                    hasValidHallDetails = false;
+                                    e.preventDefault();
+                                    return;
+                                }
+
+                                // For Art Gallery and other halls, also check start/end times
+                                if (hallType === 'art_gallery' || hallType === 'other') {
+                                    const startTimeInput = hallRow.querySelector('.hall-start-time');
+                                    const endTimeInput = hallRow.querySelector('.hall-end-time');
+                                    if (!startTimeInput.value || !endTimeInput.value) {
+                                        alert(`Please fill in start and end times for ${hallName}.`);
+                                        hasValidHallDetails = false;
+                                        e.preventDefault();
+                                        return;
+                                    }
+                                }
+                            }
+
+                        if (!audienceInput.value) {
+                            alert(`Please enter expected audience for ${hallName}.`);
+                            hasValidHallDetails = false;
+                            e.preventDefault();
+                            return;
+                        }
+
+                        console.log(`Hall ${hallName}: ${filledDateCount} dates filled`);
+                    }
+                });
+
+                if (!hasValidHallDetails) {
+                    return;
+                }
+                console.log('Hall details validation passed');
 
                 // Validate signature
                 let signatureValid = false;
@@ -525,6 +1167,9 @@
                         digitalSignatureInput.value = canvas.toDataURL('image/png');
                         signatureValid = true;
                     }
+                } else {
+                    // No signature type selected
+                    errorMessage = 'Please select a signature type.';
                 }
 
                 if (!signatureValid && errorMessage) {
@@ -532,11 +1177,13 @@
                     e.preventDefault();
                     return;
                 }
+                console.log('Signature validation passed');
 
                 // Disable submit button to prevent double submission
                 const submitButton = document.getElementById('send_message');
                 submitButton.disabled = true;
                 submitButton.textContent = 'Submitting...';
+                console.log('Form submission allowed, proceeding...');
             });
 
             function isCanvasEmpty() {

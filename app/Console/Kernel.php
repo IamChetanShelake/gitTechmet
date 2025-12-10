@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use Log;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -18,6 +19,12 @@ class Kernel extends ConsoleKernel
         // Check pending payments every 5 minutes
         $schedule->command('payments:check-pending')
                  ->everyFiveMinutes()
+                 ->withoutOverlapping()
+                 ->runInBackground();
+
+        // Send payment reminders daily at 9 AM
+        $schedule->command('payments:send-reminders')
+                 ->dailyAt('09:00')
                  ->withoutOverlapping()
                  ->runInBackground();
     }

@@ -65,7 +65,14 @@
                                 <!-- Hall Name -->
                                 <td>
                                     <div class="d-flex px-2 py-1">
-                                        <h6 class="mb-0 text-sm">{{ $eventBooking->hall_name }}</h6>
+                                        <h6 class="mb-0 text-sm">
+                                            @if(isset($eventBooking->is_group) && $eventBooking->is_group)
+                                                {{ $eventBooking->hall_name }}
+                                                <br><small class="text-muted">({{ $eventBooking->group_count }} halls)</small>
+                                            @else
+                                                {{ $eventBooking->hall_name }}
+                                            @endif
+                                        </h6>
                                     </div>
                                 </td>
 

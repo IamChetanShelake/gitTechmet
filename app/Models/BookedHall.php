@@ -14,6 +14,7 @@ class BookedHall extends Model
     use HasFactory;
 
     protected $fillable = [
+        'group_code',
         'hall_enquiry_id',
         'customer_name',
         'customer_phone',

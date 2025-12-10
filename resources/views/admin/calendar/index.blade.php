@@ -295,6 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectable: false,
         dayMaxEvents: 3,
         moreLinkClick: 'popover',
+        displayEventTime: false,
 
         // Events function
         events: function(fetchInfo, successCallback, failureCallback) {
@@ -324,8 +325,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 info.el.classList.add('event-booking');
             }
 
-
-
             // Add tooltip with event details
             if (info.event.extendedProps) {
                 var tooltip = document.createElement('div');
@@ -338,7 +337,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="event-detail"><strong>Email:</strong> ${info.event.extendedProps.customer_email || 'N/A'}</div>
                     <div class="event-detail"><strong>Type:</strong> ${info.event.extendedProps.event_type || 'N/A'}</div>
                     <div class="event-detail"><strong>Status:</strong> <span class="event-status status-${statusClass}">${info.event.extendedProps.status || 'Unknown'}</span></div>
-                    ${info.event.extendedProps.hall_name ? `<div class="event-detail"><strong>Hall:</strong> ${info.event.extendedProps.hall_name}</div>` : ''}
+                    ${info.event.extendedProps.halls && info.event.extendedProps.halls.length > 1 ?
+                        `<div class="event-detail"><strong>Halls (${info.event.extendedProps.halls.length}):</strong><br>${info.event.extendedProps.halls.join('<br>')}</div>` :
+                        (info.event.extendedProps.hall_name ? `<div class="event-detail"><strong>Hall:</strong> ${info.event.extendedProps.hall_name}</div>` : '')}
                     ${info.event.extendedProps.total_rent ? `<div class="event-detail"><strong>Total Amount:</strong> ₹${info.event.extendedProps.total_rent}</div>` : ''}
                     ${info.event.extendedProps.total_deposit ? `<div class="event-detail"><strong>Total Deposit:</strong> ₹${info.event.extendedProps.total_deposit}</div>` : ''}
                     ${info.event.extendedProps.special_note ? `<div class="event-detail"><strong>Note:</strong> ${info.event.extendedProps.special_note}</div>` : ''}
@@ -354,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
                     z-index: 1000;
                     min-width: 280px;
-                    max-width: 350px;
+                    max-width: 500px;
                     font-size: 0.875rem;
                     line-height: 1.4;
                     color: #000;
@@ -362,6 +363,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointer-events: none;
                     word-wrap: break-word;
                     overflow-wrap: break-word;
+                    white-space: normal;
                 `;
 
                 info.el.style.position = 'relative';
@@ -529,15 +531,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (props.type === 'booking') {
             viewFullDetailsBtn.style.display = 'inline-block';
             viewFullDetailsBtn.onclick = function() {
-                // Extract booking ID from event ID
-                var bookingId = event.id.replace('booking_', '');
+                // Extract booking ID from event ID (handles multi-hall bookings with group codes and dates)
+                var bookingId = event.id.replace('booking_', '').split('_')[0];
                 window.location.href = '{{ url("/booked-halls") }}/' + bookingId;
             };
         } else if (props.type === 'enquiry') {
             viewFullDetailsBtn.style.display = 'inline-block';
             viewFullDetailsBtn.onclick = function() {
-                // Extract enquiry ID from event ID
-                var enquiryId = event.id.replace('enquiry_', '');
+                // Extract enquiry ID from event ID (handles multi-hall enquiries with group codes and dates)
+                var enquiryId = event.id.replace('enquiry_', '').split('_')[0];
                 window.location.href = '{{ url("/ViewHallEnquiry") }}/' + enquiryId;
             };
         } else {
