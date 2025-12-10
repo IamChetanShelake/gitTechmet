@@ -81,8 +81,15 @@ class HallEnquiryController extends Controller
                     $hallenquiry->end_time = '21:00';
                 } elseif ($hallDetails['session'] === 'full_day') {
                     $hallenquiry->duration = 'full_day';
-                    $hallenquiry->start_time = '08:00';
-                    $hallenquiry->end_time = '21:00';
+                    // Check if custom times are provided for full day
+                    if (isset($hallDetails['start_time']) && isset($hallDetails['end_time'])) {
+                        $hallenquiry->start_time = $hallDetails['start_time'];
+                        $hallenquiry->end_time = $hallDetails['end_time'];
+                    } else {
+                        // Default times if not provided
+                        $hallenquiry->start_time = '08:00';
+                        $hallenquiry->end_time = '21:00';
+                    }
                 }
             } else {
                 // For other halls with duration selection
@@ -623,6 +630,10 @@ class HallEnquiryController extends Controller
                         $hallData['session'] = 'morning';
                     } elseif ($enquiry->duration === 'half_day_evening') {
                         $hallData['session'] = 'evening';
+                    } elseif ($enquiry->duration === 'full_day') {
+                        $hallData['session'] = 'full_day';
+                        $hallData['start_time'] = $enquiry->start_time;
+                        $hallData['end_time'] = $enquiry->end_time;
                     }
                 } elseif (str_contains($hallName, 'art gallery') || str_contains($hallName, 'art') && str_contains($hallName, 'gallery')) {
                     // For Art Gallery
@@ -789,8 +800,15 @@ class HallEnquiryController extends Controller
                                 $newEnquiry->end_time = '21:00';
                             } elseif ($hallData['session'] === 'full_day') {
                                 $newEnquiry->duration = 'full_day';
-                                $newEnquiry->start_time = '08:00';
-                                $newEnquiry->end_time = '21:00';
+                                // Check if custom times are provided for full day
+                                if (isset($hallData['start_time']) && isset($hallData['end_time'])) {
+                                    $newEnquiry->start_time = $hallData['start_time'];
+                                    $newEnquiry->end_time = $hallData['end_time'];
+                                } else {
+                                    // Default times if not provided
+                                    $newEnquiry->start_time = '08:00';
+                                    $newEnquiry->end_time = '21:00';
+                                }
                             }
                         } elseif (isset($hallData['duration'])) {
                             $newEnquiry->duration = $hallData['duration'];
@@ -863,8 +881,15 @@ class HallEnquiryController extends Controller
                             $enquiry->end_time = '21:00';
                         } elseif ($hallData['session'] === 'full_day') {
                             $enquiry->duration = 'full_day';
-                            $enquiry->start_time = '08:00';
-                            $enquiry->end_time = '21:00';
+                            // Check if custom times are provided for full day
+                            if (isset($hallData['start_time']) && isset($hallData['end_time'])) {
+                                $enquiry->start_time = $hallData['start_time'];
+                                $enquiry->end_time = $hallData['end_time'];
+                            } else {
+                                // Default times if not provided
+                                $enquiry->start_time = '08:00';
+                                $enquiry->end_time = '21:00';
+                            }
                         }
                     } elseif (isset($hallData['duration'])) {
                         $enquiry->duration = $hallData['duration'];
@@ -938,8 +963,15 @@ class HallEnquiryController extends Controller
                         $hallEnquiry->end_time = '21:00';
                     } elseif ($hallData['session'] === 'full_day') {
                         $hallEnquiry->duration = 'full_day';
-                        $hallEnquiry->start_time = '08:00';
-                        $hallEnquiry->end_time = '21:00';
+                        // Check if custom times are provided for full day
+                        if (isset($hallData['start_time']) && isset($hallData['end_time'])) {
+                            $hallEnquiry->start_time = $hallData['start_time'];
+                            $hallEnquiry->end_time = $hallData['end_time'];
+                        } else {
+                            // Default times if not provided
+                            $hallEnquiry->start_time = '08:00';
+                            $hallEnquiry->end_time = '21:00';
+                        }
                     }
                 } elseif (isset($hallData['duration'])) {
                     $hallEnquiry->duration = $hallData['duration'];

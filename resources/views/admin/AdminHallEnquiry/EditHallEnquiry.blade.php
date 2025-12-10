@@ -211,7 +211,7 @@
                                                 <option value="">-- Select Session --</option>
                                                 <option value="morning">Morning Session (8:00 AM - 2:00 PM)</option>
                                                 <option value="evening">Evening Session (4:00 PM - 9:00 PM)</option>
-                                                <option value="full_day">Full Day (8:00 AM - 9:00 PM)</option>
+                                                <option value="full_day">Full Day</option>
                                             </select>
                                         </div>
                                         <!-- Time inputs for Art Gallery -->
@@ -446,6 +446,23 @@ document.addEventListener('DOMContentLoaded', function() {
             sessionSelect.required = true;
             // Make sure duration select is not required when hidden
             durationSelect.required = false;
+
+            // Add event listener for session change to show/hide time inputs for full day
+            sessionSelect.addEventListener('change', function() {
+                if (this.value === 'full_day') {
+                    timeSection.style.display = 'block';
+                    const startTimeInput = timeSection.querySelector('.hall-start-time');
+                    const endTimeInput = timeSection.querySelector('.hall-end-time');
+                    startTimeInput.required = true;
+                    endTimeInput.required = true;
+                } else {
+                    timeSection.style.display = 'none';
+                    const startTimeInput = timeSection.querySelector('.hall-start-time');
+                    const endTimeInput = timeSection.querySelector('.hall-end-time');
+                    startTimeInput.required = false;
+                    endTimeInput.required = false;
+                }
+            });
         } else if (hallType === 'art_gallery') {
             // For Art Gallery: show only full day option
             const durationSection = row.querySelector('.hall-duration-section');
@@ -682,6 +699,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     const savedSession = hallData.session || (hallData.duration === 'full_day' ? 'full_day' : '');
                     if (sessionSelect && savedSession) {
                         sessionSelect.value = savedSession;
+                        // If full_day, show time inputs and set values
+                        if (savedSession === 'full_day') {
+                            const timeSection = row.querySelector('.hall-time-section');
+                            timeSection.style.display = 'block';
+                            const startTimeInput = timeSection.querySelector('.hall-start-time');
+                            const endTimeInput = timeSection.querySelector('.hall-end-time');
+                            startTimeInput.required = true;
+                            endTimeInput.required = true;
+                            if (hallData.start_time) startTimeInput.value = hallData.start_time;
+                            if (hallData.end_time) endTimeInput.value = hallData.end_time;
+                        }
+                        // Trigger change event to ensure proper setup
+                        sessionSelect.dispatchEvent(new Event('change'));
                     }
                 } else {
                     // All other halls use duration

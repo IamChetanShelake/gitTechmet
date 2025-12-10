@@ -447,7 +447,7 @@
                                                                 <option value="">-- Select Session --</option>
                                                                 <option value="morning">Morning Session (8:00 AM - 2:00 PM)</option>
                                                                 <option value="evening">Evening Session (4:00 PM - 9:00 PM)</option>
-                                                                <option value="full_day">Full Day (8:00 AM - 9:00 PM)</option>
+                                                                <option value="full_day">Full Day </option>
                                                             </select>
                                                         </div>
                                                         <!-- Time inputs for Art Gallery -->
@@ -586,6 +586,23 @@
                     sessionSelect.required = true;
                     // Make sure duration select is not required when hidden
                     durationSelect.required = false;
+
+                    // Add event listener for session change to show/hide time inputs for full day
+                    sessionSelect.addEventListener('change', function() {
+                        if (this.value === 'full_day') {
+                            timeSection.style.display = 'block';
+                            const startTimeInput = timeSection.querySelector('.hall-start-time');
+                            const endTimeInput = timeSection.querySelector('.hall-end-time');
+                            startTimeInput.required = true;
+                            endTimeInput.required = true;
+                        } else {
+                            timeSection.style.display = 'none';
+                            const startTimeInput = timeSection.querySelector('.hall-start-time');
+                            const endTimeInput = timeSection.querySelector('.hall-end-time');
+                            startTimeInput.required = false;
+                            endTimeInput.required = false;
+                        }
+                    });
                 } else if (hallType === 'art_gallery') {
                     // For Art Gallery: show only full day option
                     const durationSection = row.querySelector('.hall-duration-section');
