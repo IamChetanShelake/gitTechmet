@@ -434,28 +434,29 @@ public function generateBill($id)
 
     public function regenerateQuotation($id)
     {
-        // Fetch hall enquiry details
-        $enquiry = HallEnquiry::with('halll')->where('id', $id)->firstOrFail();
+        try {
+            // Fetch hall enquiry details
+            $enquiry = HallEnquiry::with('halll')->where('id', $id)->firstOrFail();
 
-        // Check if this is a multi-hall enquiry
-        $groupedEnquiries = collect();
-        if ($enquiry->group_code) {
-            // Fetch all enquiries in the same group
-            $groupedEnquiries = HallEnquiry::where('group_code', $enquiry->group_code)
-                                         ->orderBy('hall')
-                                         ->get();
-        } else {
-            // Single enquiry, add it to the collection
-            $groupedEnquiries->push($enquiry);
-        }
+            // Check if this is a multi-hall enquiry
+            $groupedEnquiries = collect();
+            if ($enquiry->group_code) {
+                // Fetch all enquiries in the same group
+                $groupedEnquiries = HallEnquiry::where('group_code', $enquiry->group_code)
+                                             ->orderBy('hall')
+                                             ->get();
+            } else {
+                // Single enquiry, add it to the collection
+                $groupedEnquiries->push($enquiry);
+            }
 
-        $isMultiHall = $groupedEnquiries->count() > 1;
+            $isMultiHall = $groupedEnquiries->count() > 1;
 
-        // Calculate totals for all halls
-        $totalDeposit = 0;
-        $totalRent = 0;
-        $totalAccessoriesPrice = 0;
-        $allAccessories = collect();
+            // Calculate totals for all halls
+            $totalDeposit = 0;
+            $totalRent = 0;
+            $totalAccessoriesPrice = 0;
+            $allAccessories = collect();
 
             foreach ($groupedEnquiries as $hallEnquiry) {
                 // Calculate hours per day from start and end time
@@ -513,47 +514,61 @@ public function generateBill($id)
                 }
             }
 
-        // Calculate total amount (Hall Rent + Paid Accessories)
-        $totalAmount = $totalRent + $totalAccessoriesPrice;
-        $gst = $totalAmount * 0.18;  // Assuming 18% GST
-        $finalAmount = $totalAmount + $gst;
+            // Calculate total amount (Hall Rent + Paid Accessories)
+            $totalAmount = $totalRent + $totalAccessoriesPrice;
+            $gst = $totalAmount * 0.18;  // Assuming 18% GST
+            $finalAmount = $totalAmount + $gst;
 
-        $pdf = app(PDF::class);
-        $pdf = $pdf->loadView('bill.invoice', [
-            'enquiry' => $enquiry,
-            'groupedEnquiries' => $groupedEnquiries,
-            'isMultiHall' => $isMultiHall,
-            'allAccessories' => $allAccessories,
-            'totalAccessoriesPrice' => $totalAccessoriesPrice,
-            'totalAmount' => $totalAmount,
-            'totalDeposit' => $totalDeposit,
-            'totalRent' => $totalRent,
-            'gst' => $gst,
-            'finalAmount' => $finalAmount,
-            'cache_buster' => time(),
-        ]);
+            $pdf = app(PDF::class);
+            $pdf = $pdf->loadView('bill.invoice', [
+                'enquiry' => $enquiry,
+                'groupedEnquiries' => $groupedEnquiries,
+                'isMultiHall' => $isMultiHall,
+                'allAccessories' => $allAccessories,
+                'totalAccessoriesPrice' => $totalAccessoriesPrice,
+                'totalAmount' => $totalAmount,
+                'totalDeposit' => $totalDeposit,
+                'totalRent' => $totalRent,
+                'gst' => $gst,
+                'finalAmount' => $finalAmount,
+                'cache_buster' => time(),
+            ]);
 
-        // ✅ Define file name like "quotation_1.pdf"
-        $fileName = 'quotation_' . $enquiry->id . '_' . time() . '.pdf';
-        $directory = public_path('quotation'); // Folder in public directory
-        $filePath = $directory . '/' . $fileName;
+            // ✅ Define file name like "quotation_1.pdf"
+            $fileName = 'quotation_' . $enquiry->id . '_' . time() . '.pdf';
+            $directory = public_path('quotation'); // Folder in public directory
+            $filePath = $directory . '/' . $fileName;
 
-        // ✅ Ensure the directory exists
-        if (!File::exists($directory)) {
-            File::makeDirectory($directory, 0755, true, true);
-        }
+            // ✅ Ensure the directory exists
+            if (!File::exists($directory)) {
+                File::makeDirectory($directory, 0755, true, true);
+            }
 
-        $pdf->save($filePath);
+            $pdf->save($filePath);
 
-        // Update quotation_file for all enquiries in the group (for multi-hall enquiries)
-        if ($enquiry->group_code) {
-            // For multi-hall enquiries, update quotation_file for all enquiries in the group
-            HallEnquiry::where('group_code', $enquiry->group_code)
-                      ->update(['quotation_file' => $fileName]);
-        } else {
-            // For single hall enquiries, update just this enquiry
-            $enquiry->quotation_file = $fileName;
-            $enquiry->save();
+            // Verify file was created
+            if (!File::exists($filePath)) {
+                Log::error("PDF file was not created at: {$filePath}");
+                return false;
+            }
+
+            // Update quotation_file for all enquiries in the group (for multi-hall enquiries)
+            if ($enquiry->group_code) {
+                // For multi-hall enquiries, update quotation_file for all enquiries in the group
+                HallEnquiry::where('group_code', $enquiry->group_code)
+                          ->update(['quotation_file' => $fileName]);
+            } else {
+                // For single hall enquiries, update just this enquiry
+                $enquiry->quotation_file = $fileName;
+                $enquiry->save();
+            }
+
+            Log::info("Quotation PDF regenerated successfully for enquiry ID: {$enquiry->id}, file: {$fileName}");
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error("Error regenerating quotation PDF for enquiry ID: {$id}. Error: " . $e->getMessage());
+            return false;
         }
     }
 }

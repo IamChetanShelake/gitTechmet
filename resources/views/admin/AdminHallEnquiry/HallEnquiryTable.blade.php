@@ -35,7 +35,7 @@
                 function filterTable() {
                     var hallFilter = $('#hallFilter').val().toLowerCase();
                     var customerSearch = $('#customerSearch').val().toLowerCase();
-                    var statusFilter = $('#statusFilter').val().toLowerCase();
+                    var statusFilter = $('#statusFilter').val();
 
                     $('tbody tr').each(function() {
                         var row = $(this);
@@ -43,15 +43,9 @@
                         var hallName = row.find('td:nth-child(3) h6').text().toLowerCase();
                         var status = '';
 
-                        // Get status from badge
-                        var statusBadge = row.find('td:nth-child(6) .badge');
-                        if (statusBadge.hasClass('bg-warning')) {
-                            status = 'pending';
-                        } else if (statusBadge.hasClass('bg-success')) {
-                            status = 'viewed';
-                        } else if (statusBadge.hasClass('bg-danger')) {
-                            status = 'rejected';
-                        }
+                        // Get status from badge text (7th column)
+                        var statusBadge = row.find('td:nth-child(7) .badge');
+                        status = statusBadge.text().trim();
 
                         var showRow = true;
 
@@ -65,8 +59,8 @@
                             showRow = false;
                         }
 
-                        // Apply status filter
-                        if (statusFilter && status !== statusFilter) {
+                        // Apply status filter (case-insensitive)
+                        if (statusFilter && status.toLowerCase() !== statusFilter.toLowerCase()) {
                             showRow = false;
                         }
 
