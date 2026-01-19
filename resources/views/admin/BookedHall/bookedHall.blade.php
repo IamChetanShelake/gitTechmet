@@ -29,6 +29,25 @@
                 setTimeout(function() {
                     $("#successMessage, #failMessage").fadeOut('slow');
                 }, 3000); // Hide messages after 3 seconds
+
+                // Export functionality
+                $('#exportBtn').on('click', function() {
+                    var dateFrom = $('#dateFrom').val();
+                    var dateTo = $('#dateTo').val();
+
+                    if (dateFrom && dateTo) {
+                        var url = "{{ route('admin.booked-halls.export', 'custom') }}?date_from=" + dateFrom + "&date_to=" + dateTo;
+                        window.location.href = url;
+                    } else {
+                        window.location.href = "{{ route('admin.booked-halls.export', 'all') }}";
+                    }
+                });
+
+                // Clear filters functionality
+                $('#clearFilters').on('click', function() {
+                    $('#dateFrom').val('');
+                    $('#dateTo').val('');
+                });
             });
         </script>
 
@@ -87,9 +106,24 @@
             }
         </script>
 
-        <!-- Add Button -->
-        <div class="d-flex justify-content-end p-3">
-            {{-- <a class="btn btn-outline-primary btn-lg px-4 py-2" href="{{ route('admin.hall-enquiry.create') }}">Add</a> --}}
+        <!-- Filter Section -->
+        <div class="card-body px-3 pt-3 pb-0">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label class="form-label text-sm font-weight-bold">Date From</label>
+                    <input type="date" id="dateFrom" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-sm font-weight-bold">Date To</label>
+                    <input type="date" id="dateTo" class="form-control">
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button id="clearFilters" class="btn btn-outline-secondary btn-sm me-2">Clear Filters</button>
+                    <button id="exportBtn" type="button" class="btn btn-success btn-lg px-4 py-2">
+                        <i class="fa fa-download"></i> Export Report
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Table Section -->

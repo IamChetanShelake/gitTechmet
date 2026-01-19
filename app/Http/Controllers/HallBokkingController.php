@@ -10,6 +10,7 @@ use App\Models\EventService;
 use Illuminate\Http\Request;
 use App\Models\CateringService;
 use App\Models\PaymentTransaction;
+use App\Exports\BookedHallExport;
 use Illuminate\Support\Facades\Log;
 
 class HallBokkingController extends Controller
@@ -731,5 +732,21 @@ class HallBokkingController extends Controller
             Log::error('Error cancelling group booking: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to cancel group booking. Please try again.']);
         }
+    }
+
+    public function exportExcel($period = 'all')
+    {
+        $dateFrom = request('date_from');
+        $dateTo = request('date_to');
+
+        $filename = 'booked_halls_report';
+
+        if ($period === 'custom' && $dateFrom && $dateTo) {
+            $filename .= '_custom_' . $dateFrom . '_to_' . $dateTo . '.xlsx';
+            return \Maatwebsite\Excel\Facades\Excel::download(new BookedHallExport($period, $dateFrom, $dateTo), $filename);
+        }
+
+        $filename .= '_all.xlsx';
+        return \Maatwebsite\Excel\Facades\Excel::download(new BookedHallExport($period), $filename);
     }
 }

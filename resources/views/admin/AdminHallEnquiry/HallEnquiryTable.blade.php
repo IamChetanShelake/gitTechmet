@@ -36,6 +36,8 @@
                     var hallFilter = $('#hallFilter').val().toLowerCase();
                     var customerSearch = $('#customerSearch').val().toLowerCase();
                     var statusFilter = $('#statusFilter').val();
+                    var dateFrom = $('#dateFrom').val();
+                    var dateTo = $('#dateTo').val();
 
                     $('tbody tr').each(function() {
                         var row = $(this);
@@ -47,6 +49,8 @@
                         var statusBadge = row.find('td:nth-child(7) .badge');
                         status = statusBadge.text().trim();
 
+                        // Assume event date is stored in data attribute or need to get from somewhere
+                        // For now, since date is not in table, skip date filter for table display
                         var showRow = true;
 
                         // Apply hall filter
@@ -92,8 +96,23 @@
                     $('#hallFilter').val('');
                     $('#customerSearch').val('');
                     $('#statusFilter').val('');
+                    $('#dateFrom').val('');
+                    $('#dateTo').val('');
                     $('tbody tr').show();
                     updateSerialNumbers();
+                });
+
+                // Export functionality
+                $('#exportBtn').on('click', function() {
+                    var dateFrom = $('#dateFrom').val();
+                    var dateTo = $('#dateTo').val();
+
+                    if (dateFrom && dateTo) {
+                        var url = "{{ route('admin.hall-enquiries.export', 'custom') }}?date_from=" + dateFrom + "&date_to=" + dateTo;
+                        window.location.href = url;
+                    } else {
+                        window.location.href = "{{ route('admin.hall-enquiries.export', 'all') }}";
+                    }
                 });
             });
         </script>
@@ -101,7 +120,7 @@
         <!-- Filter Section -->
         <div class="card-body px-3 pt-3 pb-0">
             <div class="row mb-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="hallFilter" class="form-label text-sm font-weight-bold">Filter by Hall Name</label>
                     <select id="hallFilter" class="form-select">
                         <option value="">All Halls</option>
@@ -110,11 +129,11 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="customerSearch" class="form-label text-sm font-weight-bold">Search by Customer Name</label>
                     <input type="text" id="customerSearch" class="form-control" placeholder="Enter customer name...">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="statusFilter" class="form-label text-sm font-weight-bold">Filter by Status</label>
                     <select id="statusFilter" class="form-select">
                         <option value="">All Status</option>
@@ -123,9 +142,17 @@
                         <option value="rejected">Rejected</option>
                     </select>
                 </div>
+                <div class="col-md-3">
+                    <label class="form-label text-sm font-weight-bold">Date From</label>
+                    <input type="date" id="dateFrom" class="form-control">
+                </div>
             </div>
             <div class="row mb-3">
-                <div class="col-12">
+                <div class="col-md-3">
+                    <label class="form-label text-sm font-weight-bold">Date To</label>
+                    <input type="date" id="dateTo" class="form-control">
+                </div>
+                <div class="col-md-9 d-flex align-items-end">
                     <button id="clearFilters" class="btn btn-outline-secondary btn-sm">Clear All Filters</button>
                 </div>
             </div>
@@ -133,25 +160,9 @@
 
         <!-- Export Section -->
         <div class="d-flex justify-content-end px-3 mb-3">
-            <div class="btn-group" role="group">
-                <button id="exportDropdown" type="button" class="btn btn-success btn-lg px-4 py-2 dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fa fa-download"></i> Export Reports
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'all') }}">
-                        <i class="fas fa-file-excel"></i> All Time Report
-                    </a></li>
-                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'weekly') }}">
-                        <i class="fas fa-calendar-week"></i> Weekly Report
-                    </a></li>
-                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'monthly') }}">
-                        <i class="fas fa-calendar-alt"></i> Monthly Report
-                    </a></li>
-                    <li><a class="dropdown-item" href="{{ route('admin.hall-enquiries.export', 'yearly') }}">
-                        <i class="fas fa-calendar"></i> Yearly Report
-                    </a></li>
-                </ul>
-            </div>
+            <button id="exportBtn" type="button" class="btn btn-success btn-lg px-4 py-2">
+                <i class="fa fa-download"></i> Export Report
+            </button>
         </div>
 
         <!-- Table Section -->

@@ -503,6 +503,8 @@ Route::put('/admin/quotation/update/{id}', [BillController::class, 'updateQuotat
 
     Route::get('/booked-halls',[HallBokkingController::class, 'index'])->name('Booked.Halls');
 
+    Route::get('/booked-halls/export/{period?}', [HallBokkingController::class, 'exportExcel'])->name('admin.booked-halls.export');
+
     Route::get('/cancelled-bookings', [HallBokkingController::class, 'cancelledBookings'])->name('Cancelled.Bookings');
 
     Route::get('/booked-halls/{id}',[HallBokkingController::class, 'view'])->name('View.Booking');

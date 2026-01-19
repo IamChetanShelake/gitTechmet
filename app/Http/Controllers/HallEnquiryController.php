@@ -499,6 +499,7 @@ class HallEnquiryController extends Controller
                     $enquiry->vendor = json_encode($request->vendor ?? []);
                     $enquiry->id_proof = $request->id_proof;
                     $enquiry->status = 'Viewed';
+                    $enquiry->update_status = 'revised';
                     $enquiry->save();
                 }
 
@@ -568,6 +569,14 @@ class HallEnquiryController extends Controller
 
     public function exportExcel($period = 'all')
     {
+        $dateFrom = request('date_from');
+        $dateTo = request('date_to');
+
+        if ($period === 'custom' && $dateFrom && $dateTo) {
+            $filename = 'hall_enquiries_report_custom_' . $dateFrom . '_to_' . $dateTo . '.xlsx';
+            return \Maatwebsite\Excel\Facades\Excel::download(new HallEnquiryExport($period, $dateFrom, $dateTo), $filename);
+        }
+
         $filename = 'hall_enquiries_report';
 
         switch ($period) {

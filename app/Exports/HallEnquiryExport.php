@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\HallEnquiry;
 use App\Models\BookedHall;
+use App\Models\Accessorie;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -14,10 +15,14 @@ use Carbon\Carbon;
 class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, WithColumnFormatting
 {
     protected $period;
+    protected $dateFrom;
+    protected $dateTo;
 
-    public function __construct($period = 'all')
+    public function __construct($period = 'all', $dateFrom = null, $dateTo = null)
     {
         $this->period = $period;
+        $this->dateFrom = $dateFrom;
+        $this->dateTo = $dateTo;
     }
 
     /**
@@ -43,22 +48,136 @@ class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, Wi
                 $query->where('event_date', '>=', now()->startOfYear())
                       ->where('event_date', '<=', now()->endOfYear());
                 break;
+            case 'custom':
+                if ($this->dateFrom && $this->dateTo) {
+                    $query->where('event_date', '>=', $this->dateFrom)
+                          ->where('event_date', '<=', $this->dateTo);
+                }
+                break;
             // 'all' case - no additional filtering
         }
 
         $enquiries = $query->get();
 
-        // Get corresponding booked halls data
-        $bookedHalls = BookedHall::whereNull('cancelled_at')
-            ->whereIn('hall_enquiry_id', $enquiries->pluck('id'))
-            ->get()
-            ->keyBy('hall_enquiry_id');
-
-        // Combine the data
-        return $enquiries->map(function ($enquiry) use ($bookedHalls) {
-            $enquiry->booked_hall = $bookedHalls->get($enquiry->id);
-            return $enquiry;
+        // Group enquiries by group_code (treat single enquiries as their own group)
+        $grouped = $enquiries->groupBy(function ($enquiry) {
+            return $enquiry->group_code ?: 'single_' . $enquiry->id;
         });
+
+        // Create aggregated data for each group
+        $aggregatedData = collect();
+        foreach ($grouped as $groupCode => $groupEnquiries) {
+            $firstEnquiry = $groupEnquiries->first();
+
+            // Aggregate data
+            $allHalls = $groupEnquiries->pluck('hall')->unique()->implode(', ');
+            $allDates = [];
+            $totalRent = 0;
+            $totalDeposit = 0;
+            $totalAccessoriesPrice = 0;
+            $allAccessories = collect();
+            $allSpecialNotes = collect();
+
+            foreach ($groupEnquiries as $enquiry) {
+                // Collect dates
+                if ($enquiry->event_dates) {
+                    $dates = json_decode($enquiry->event_dates, true) ?? [];
+                    $allDates = array_merge($allDates, $dates);
+                } else {
+                    $allDates[] = $enquiry->event_date;
+                }
+
+                // Sum amounts
+                $totalRent += (float) ($enquiry->rent_amount ?? 0);
+                $totalDeposit += (float) ($enquiry->deposit ?? 0);
+
+                // Calculate hours per day from start and end time
+                $startTime = Carbon::createFromFormat('H:i:s', $enquiry->start_time . ':00');
+                $endTime = Carbon::createFromFormat('H:i:s', $enquiry->end_time . ':00');
+                $hoursPerDay = $startTime->diffInHours($endTime, false); // false to get positive difference
+
+                // Get number of days for this enquiry
+                $dates = $enquiry->event_dates ? json_decode($enquiry->event_dates, true) : [$enquiry->event_date];
+                $dates = array_filter($dates);
+                $numberOfDays = count($dates);
+
+                // Collect accessories with proper cost calculation
+                if ($enquiry->accessorie) {
+                    $accessoryIds = json_decode($enquiry->accessorie, true) ?? [];
+                    if (!empty($accessoryIds)) {
+                        $accessoryCounts = array_count_values($accessoryIds); // Count quantities
+                        foreach ($accessoryCounts as $accId => $qty) {
+                            $allAccessories->put($accId, ($allAccessories->get($accId, 0) + $qty));
+                        }
+
+                        // Calculate accessory costs using same logic as bill controller
+                        $hallAccessories = Accessorie::whereIn('id', array_keys($accessoryCounts))->get();
+                        $hallAccessoriesPrice = $hallAccessories->sum(function ($accessory) use ($hoursPerDay, $numberOfDays, $accessoryCounts) {
+                            $price = (float) ($accessory->price ?? 0); // Use 'price' field as in bill controller
+                            $hours = (float) ($accessory->hours ?? 1);
+                            if ($price <= 0 || $hours <= 0) return 0;
+
+                            $blocksPerDay = floor($hoursPerDay / $hours);
+                            $pricePerDay = $price * max($blocksPerDay, 1); // Minimum 1 block per day
+
+                            // Multiply by number of days and quantity
+                            $qty = $accessoryCounts[$accessory->id] ?? 1;
+                            return $pricePerDay * $numberOfDays * $qty;
+                        });
+
+                        $totalAccessoriesPrice += $hallAccessoriesPrice;
+                    }
+                }
+
+                // Collect special notes
+                if ($enquiry->special_note) {
+                    $allSpecialNotes->push($enquiry->special_note);
+                }
+            }
+
+            // Unique dates, sort
+            $allDates = array_unique($allDates);
+            sort($allDates);
+            $programDate = implode(', ', array_map(function($date) {
+                return $date ? Carbon::parse($date)->format('d-m-Y') : '';
+            }, $allDates));
+
+            // Calculate accessories cost and names
+            $accessoryCosts = $totalAccessoriesPrice; // Use the calculated price from above
+            $accessoryNames = [];
+            foreach ($allAccessories as $accId => $qty) {
+                $accessory = Accessorie::find($accId);
+                if ($accessory) {
+                    $accessoryNames[] = $accessory->name . ' (x' . $qty . ')';
+                }
+            }
+
+            // GST is only on service charges (rent + accessories), not on deposit
+            $serviceCharges = $totalRent + $accessoryCosts;
+            $gstAmount = $serviceCharges * 0.18;
+            $charges = $serviceCharges + $totalDeposit; // Total charges including deposit
+            $totalAmount = $charges + $gstAmount;
+
+            // Create aggregated object
+            $aggregated = (object) [
+                'group_code' => $groupCode,
+                'organization' => $firstEnquiry->organization,
+                'name' => $firstEnquiry->name,
+                'hall' => $allHalls,
+                'event_type' => $firstEnquiry->event_type,
+                'program_date' => $programDate,
+                'charges' => $charges,
+                'gst_amount' => $gstAmount,
+                'total_amount' => $totalAmount,
+                'remarks' => $allSpecialNotes->unique()->implode('; '),
+                'accessories_names' => implode(', ', $accessoryNames),
+                'is_group' => $groupEnquiries->count() > 1,
+            ];
+
+            $aggregatedData->push($aggregated);
+        }
+
+        return $aggregatedData;
     }
 
     /**
@@ -67,94 +186,53 @@ class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function headings(): array
     {
         return [
-            'Sr. No.',
-            'Customer Name',
-            'Date',
+            'Sr No',
             'Organization Name',
+            'Customer Name',
+            'Hall Name',
             'Event Type',
-            'Mobile No.',
-            'Venue',
-            'Event Manager Inhouse',
-            'Event Manager Outside',
-            'Caterer Inhouse',
-            'Caterer Outside'
+            'Program Date',
+            'Charges',
+            'GST Amount',
+            'Total Amount',
+            'Remarks',
+            'Accessories Names'
         ];
     }
 
     /**
-     * @param mixed $enquiry
+     * @param mixed $data
      * @return array
      */
-    public function map($enquiry): array
+    public function map($data): array
     {
         static $serialNumber = 0;
         $serialNumber++; // Increment serial number for each row
 
-        $srNo = $serialNumber; // Sequential Sr. No. starting from 1
-        $customerName = $enquiry->name ?? '';
-        $date = $enquiry->event_date ? Carbon::parse($enquiry->event_date)->format('d-m-Y') : '';
-        $organization = $enquiry->organization ?? '';
-        $eventType = $enquiry->event_type ?? '';
-        $mobileNo = $enquiry->contact_no ? "'" . $enquiry->contact_no : ''; // Prefix with single quote to force text format
-        $venue = $enquiry->hall ?? '';
-
-        // Determine Event Manager and Caterer values based on booked hall data
-        $eventManagerInhouse = '';
-        $eventManagerOutside = '';
-        $catererInhouse = '';
-        $catererOutside = '';
-
-        if ($enquiry->booked_hall) {
-            // If event_flag is 1, it's inhouse, else outside
-            if ($enquiry->booked_hall->event_flag == '1') {
-                $eventManagerInhouse = 'Yes';
-                $eventManagerOutside = 'No';
-            } else {
-                $eventManagerInhouse = 'No';
-                $eventManagerOutside = 'Yes';
-            }
-
-            // If catering_flag is 1, it's inhouse, else outside
-            if ($enquiry->booked_hall->catering_flag == '1') {
-                $catererInhouse = 'Yes';
-                $catererOutside = 'No';
-            } else {
-                $catererInhouse = 'No';
-                $catererOutside = 'Yes';
-            }
-        } else {
-            // If no booked hall, check vendor services from enquiry
-            $vendorServices = json_decode($enquiry->vendor, true) ?? [];
-
-            if (in_array('event', $vendorServices)) {
-                $eventManagerInhouse = 'Yes';
-                $eventManagerOutside = 'No';
-            } else {
-                $eventManagerInhouse = 'No';
-                $eventManagerOutside = 'Yes';
-            }
-
-            if (in_array('catering', $vendorServices)) {
-                $catererInhouse = 'Yes';
-                $catererOutside = 'No';
-            } else {
-                $catererInhouse = 'No';
-                $catererOutside = 'Yes';
-            }
-        }
+        $srNo = $serialNumber;
+        $organization = $data->organization ?? 'na';
+        $customerName = $data->name ?? 'na';
+        $hallName = $data->hall ?? 'na';
+        $eventType = $data->event_type ?? 'na';
+        $programDate = $data->program_date ?? 'na';
+        $charges = $data->charges ?? 0;
+        $gstAmount = $data->gst_amount ?? 0;
+        $totalAmount = $data->total_amount ?? 0;
+        $remarks = $data->remarks ?: 'na';
+        $accessoriesNames = $data->accessories_names ?: 'na';
 
         return [
             $srNo,
-            $customerName,
-            $date,
             $organization,
+            $customerName,
+            $hallName,
             $eventType,
-            $mobileNo,
-            $venue,
-            $eventManagerInhouse,
-            $eventManagerOutside,
-            $catererInhouse,
-            $catererOutside
+            $programDate,
+            number_format($charges, 2),
+            number_format($gstAmount, 2),
+            number_format($totalAmount, 2),
+            $remarks,
+            $accessoriesNames
         ];
     }
 
@@ -164,7 +242,9 @@ class HallEnquiryExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function columnFormats(): array
     {
         return [
-            'F' => NumberFormat::FORMAT_TEXT, // Mobile No. column (6th column, 0-indexed as 5, Excel column F)
+            'G' => NumberFormat::FORMAT_NUMBER_00, // Charges column (7th column, 0-indexed as 6, Excel column G)
+            'H' => NumberFormat::FORMAT_NUMBER_00, // GST Amount column (8th, Excel H)
+            'I' => NumberFormat::FORMAT_NUMBER_00, // Total Amount column (9th, Excel I)
         ];
     }
 }

@@ -44,6 +44,7 @@ class HallEnquiry extends Model
         'sign_image',
         'typed_signature',
         'cancelled_at',
+        'update_status'
     ];
 
     // Relationship with Hall

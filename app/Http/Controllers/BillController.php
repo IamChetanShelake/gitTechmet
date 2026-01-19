@@ -426,6 +426,7 @@ public function generateBill($id)
             $enquiry->update($updateData);
         }
 
+
         // Regenerate the quotation PDF
         $this->regenerateQuotation($enquiry->id);
 
