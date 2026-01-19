@@ -154,83 +154,180 @@
 
                     <!-- Transactions Table -->
                     <div class="table-responsive p-0">
-                        <table class="table align-items-center mb-0">
+                        <table class="table align-items-center mb-0" style="border-collapse: separate; border-spacing: 0;">
                             <thead>
                                 <tr>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Transaction</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Customer</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Hall</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Type</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Hall</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Item/Service</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Amount</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">GST (18%)</th>
+                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Type</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
                                     <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
                                     <th class="text-secondary opacity-7">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($transactions as $transaction)
-                                <tr>
-                                    <td>
-                                        <div class="d-flex px-2 py-1">
-                                            <div class="d-flex flex-column justify-content-center">
-                                                <h6 class="mb-0 text-sm">{{ $transaction->merchant_txn_no }}</h6>
-                                                @if($transaction->payphi_txn_no)
-                                                    <p class="text-xs text-secondary mb-0">Gateway: {{ $transaction->payphi_txn_no }}</p>
-                                                @endif
+                                @php $currentTransactionId = null; $transactionIndex = 0; @endphp
+                                @forelse($displayTransactions as $index => $displayItem)
+                                @php
+                                    $transaction = $displayItem['transaction'];
+                                    $isMainRow = $displayItem['type'] === 'main';
+                                    $isSubRow = $displayItem['type'] === 'sub';
+
+                                    // Check if this is a new transaction group
+                                    $isNewTransaction = $currentTransactionId !== $transaction->id;
+                                    if ($isNewTransaction) {
+                                        $currentTransactionId = $transaction->id;
+                                        $transactionIndex++;
+                                    }
+
+                                    // Alternate background colors for different transactions
+                                    $bgClass = $transactionIndex % 2 === 0 ? 'bg-light' : '';
+                                @endphp
+                                <tr class="{{ $bgClass }} @if($isSubRow) table-light @endif"
+                                    style="@if($isNewTransaction) border-top: 2px solid #dee2e6; @endif
+                                           @if($displayItem['is_group_member']) border-left: 3px solid #007bff; @endif
+                                           @if($isMainRow && !$displayItem['has_sub_rows']) border-bottom: 2px solid #dee2e6; @endif">
+                                    <td style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow)
+                                            <div class="d-flex px-2 py-1">
+                                                <div class="d-flex flex-column justify-content-center">
+                                                    <h6 class="mb-0 text-sm">{{ $transaction->merchant_txn_no }}</h6>
+                                                    @if($transaction->payphi_txn_no)
+                                                        <p class="text-xs text-secondary mb-0">Gateway: {{ $transaction->payphi_txn_no }}</p>
+                                                    @endif
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endif
                                     </td>
-                                    <td>
+                                    <td style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow)
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm">{{ $transaction->bookedHall->customer_name ?? 'N/A' }}</h6>
+                                                <p class="text-xs text-secondary mb-0">{{ $transaction->customer_email }}</p>
+                                                <p class="text-xs text-secondary mb-0">{{ $transaction->customer_mobile }}</p>
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
                                         <div class="d-flex flex-column justify-content-center">
-                                            <h6 class="mb-0 text-sm">{{ $transaction->bookedHall->customer_name ?? 'N/A' }}</h6>
-                                            <p class="text-xs text-secondary mb-0">{{ $transaction->customer_email }}</p>
-                                            <p class="text-xs text-secondary mb-0">{{ $transaction->customer_mobile }}</p>
+                                            @if($isMainRow)
+                                                <h6 class="mb-0 text-sm font-weight-bold">{{ $displayItem['hall_name'] ?? 'N/A' }}</h6>
+                                            @else
+                                                <span class="text-sm text-muted">
+                                                    <i class="material-symbols-rounded text-xs me-1">location_on</i>
+                                                    {{ $displayItem['hall_name'] ?? 'N/A' }}
+                                                </span>
+                                            @endif
                                         </div>
                                     </td>
-                                    <td class="align-middle text-center text-sm">
-                                        <span class="text-secondary text-xs font-weight-bold">{{ $transaction->bookedHall->hall_name ?? 'N/A' }}</span>
+                                    <td style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        <div class="d-flex flex-column justify-content-center">
+                                            @if($isMainRow)
+                                                <h6 class="mb-0 text-sm">{{ $displayItem['item_service'] ?? 'N/A' }}</h6>
+                                            @else
+                                                @if(isset($displayItem['type']) && $displayItem['type'] === 'accessory')
+                                                    <span class="text-sm text-info font-weight-bold">
+                                                        <i class="material-symbols-rounded text-xs me-1">settings</i>
+                                                        {{ $displayItem['item_service'] ?? 'N/A' }}
+                                                    </span>
+                                                @elseif(isset($displayItem['type']) && $displayItem['type'] === 'hall_charge')
+                                                    <span class="text-sm text-success font-weight-bold">
+                                                        <i class="material-symbols-rounded text-xs me-1">meeting_room</i>
+                                                        {{ $displayItem['item_service'] ?? 'N/A' }}
+                                                    </span>
+                                                @elseif(isset($displayItem['type']) && $displayItem['type'] === 'deposit')
+                                                    <span class="text-sm text-warning font-weight-bold">
+                                                        <i class="material-symbols-rounded text-xs me-1">account_balance_wallet</i>
+                                                        {{ $displayItem['item_service'] ?? 'N/A' }}
+                                                    </span>
+                                                @else
+                                                    <span class="text-sm">{{ $displayItem['item_service'] ?? 'N/A' }}</span>
+                                                @endif
+                                            @endif
+                                        </div>
                                     </td>
-                                    <td class="align-middle text-center">
-                                        @php
-                                            $typeColors = [
-                                                'deposit' => 'info',
-                                                'rent' => 'warning',
-                                                'full' => 'success',
-                                                'REFUND' => 'danger'
-                                            ];
-                                            $color = $typeColors[$transaction->transaction_type] ?? 'secondary';
-                                        @endphp
-                                        <span class="badge badge-sm bg-gradient-{{ $color }}">{{ ucfirst($transaction->transaction_type ?? 'N/A') }}</span>
+                                    <td class="align-middle text-center" style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow)
+                                            <span class="text-secondary text-xs font-weight-bold text-primary">
+                                                ₹{{ number_format($displayItem['amount'], 2) }}
+                                            </span>
+                                        @else
+                                            @if(isset($displayItem['type']) && $displayItem['type'] === 'accessory')
+                                                <span class="text-info text-xs font-weight-bold">
+                                                    ₹{{ number_format($displayItem['amount'], 2) }}
+                                                </span>
+                                            @elseif(isset($displayItem['type']) && $displayItem['type'] === 'hall_charge')
+                                                <span class="text-success text-xs font-weight-bold">
+                                                    ₹{{ number_format($displayItem['amount'], 2) }}
+                                                </span>
+                                            @elseif(isset($displayItem['type']) && $displayItem['type'] === 'deposit')
+                                                <span class="text-warning text-xs font-weight-bold">
+                                                    ₹{{ number_format($displayItem['amount'], 2) }}
+                                                </span>
+                                            @else
+                                                <span class="text-secondary text-xs font-weight-bold">
+                                                    ₹{{ number_format($displayItem['amount'], 2) }}
+                                                </span>
+                                            @endif
+                                        @endif
                                     </td>
-                                    <td class="align-middle text-center">
-                                        <span class="text-secondary text-xs font-weight-bold">₹{{ number_format($transaction->amount, 2) }}</span>
+                                    <td class="align-middle text-center" style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow && isset($displayItem['gst_amount']))
+                                            <span class="text-secondary text-xs font-weight-bold text-success">
+                                                ₹{{ number_format($displayItem['gst_amount'], 2) }}
+                                            </span>
+                                        @endif
                                     </td>
-                                    <td class="align-middle text-center text-sm">
-                                        @php
-                                            $statusColors = [
-                                                'SUCCESS' => 'success',
-                                                'FAILED' => 'danger',
-                                                'initiated' => 'warning',
-                                                'PENDING' => 'info'
-                                            ];
-                                            $color = $statusColors[$transaction->status] ?? 'secondary';
-                                        @endphp
-                                        <span class="badge badge-sm bg-gradient-{{ $color }}">{{ $transaction->status }}</span>
+                                    <td class="align-middle text-center" style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow)
+                                            @php
+                                                $typeColors = [
+                                                    'deposit' => 'info',
+                                                    'rent' => 'warning',
+                                                    'full' => 'success',
+                                                    'REFUND' => 'danger'
+                                                ];
+                                                $color = $typeColors[$transaction->transaction_type] ?? 'secondary';
+                                            @endphp
+                                            <span class="badge badge-sm bg-gradient-{{ $color }}">{{ ucfirst($transaction->transaction_type ?? 'N/A') }}</span>
+                                        @endif
                                     </td>
-                                    <td class="align-middle text-center">
-                                        <span class="text-secondary text-xs font-weight-bold">
-                                            {{ $transaction->payment_date ? $transaction->payment_date->format('d M Y, H:i') : $transaction->created_at->format('d M Y, H:i') }}
-                                        </span>
+                                    <td class="align-middle text-center text-sm" style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow)
+                                            @php
+                                                $statusColors = [
+                                                    'SUCCESS' => 'success',
+                                                    'FAILED' => 'danger',
+                                                    'initiated' => 'warning',
+                                                    'PENDING' => 'info'
+                                                ];
+                                                $color = $statusColors[$transaction->status] ?? 'secondary';
+                                            @endphp
+                                            <span class="badge badge-sm bg-gradient-{{ $color }}">{{ $transaction->status }}</span>
+                                        @endif
                                     </td>
-                                    <td class="align-middle">
-                                        <a href="{{ route('admin.payment-transactions.show', $transaction->id) }}" class="btn btn-link text-dark px-3 mb-0">
-                                            <i class="material-symbols-rounded text-sm me-2">visibility</i>View
-                                        </a>
+                                    <td class="align-middle text-center" style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow)
+                                            <span class="text-secondary text-xs font-weight-bold">
+                                                {{ $transaction->payment_date ? $transaction->payment_date->format('d M Y, H:i') : $transaction->created_at->format('d M Y, H:i') }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="align-middle" style="@if($isMainRow && $displayItem['has_sub_rows']) border-bottom: 1px solid #dee2e6; @endif">
+                                        @if($isMainRow)
+                                            <a href="{{ route('admin.payment-transactions.show', $transaction->id) }}" class="btn btn-link text-dark px-3 mb-0">
+                                                <i class="material-symbols-rounded text-sm me-2">visibility</i>View
+                                            </a>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-4">
+                                    <td colspan="10" class="text-center py-4">
                                         <p class="text-secondary mb-0">No payment transactions found.</p>
                                     </td>
                                 </tr>
@@ -239,12 +336,6 @@
                         </table>
                     </div>
 
-                    <!-- Pagination -->
-                    @if($transactions->hasPages())
-                    <div class="d-flex justify-content-center mt-4">
-                        {{ $transactions->appends(request()->query())->links() }}
-                    </div>
-                    @endif
                 </div>
             </div>
         </div>

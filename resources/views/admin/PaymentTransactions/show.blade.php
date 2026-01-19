@@ -11,7 +11,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    
+
                     <!-- Back Button -->
                     <div class="row mb-3">
                         <div class="col-12">
@@ -47,7 +47,7 @@
                                             @php
                                                 $typeColors = [
                                                     'deposit' => 'info',
-                                                    'rent' => 'warning', 
+                                                    'rent' => 'warning',
                                                     'full' => 'success',
                                                     'REFUND' => 'danger'
                                                 ];
@@ -86,7 +86,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header pb-0">
@@ -163,6 +163,59 @@
                     </div>
                     @endif
 
+                    <!-- Charges Breakdown -->
+                    @if(!empty($breakdown))
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header pb-0">
+                                    <h6>Charges Breakdown</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Hall Name</th>
+                                                    <th class="text-end">Hall Charges (₹)</th>
+                                                    <th class="text-end">Accessories (₹)</th>
+                                                    <th class="text-end">Deposit (₹)</th>
+                                                    <th class="text-end">Subtotal (₹)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php $totalBreakdown = ['hall_charges' => 0, 'accessories_charges' => 0, 'deposit_charges' => 0, 'total' => 0] @endphp
+                                                @foreach($breakdown as $item)
+                                                <tr>
+                                                    <td>{{ $item['hall_name'] }}</td>
+                                                    <td class="text-end">{{ number_format($item['hall_charges'], 2) }}</td>
+                                                    <td class="text-end">{{ number_format($item['accessories_charges'], 2) }}</td>
+                                                    <td class="text-end">{{ number_format($item['deposit_charges'], 2) }}</td>
+                                                    <td class="text-end font-weight-bold">{{ number_format($item['total'], 2) }}</td>
+                                                </tr>
+                                                @php
+                                                    $totalBreakdown['hall_charges'] += $item['hall_charges'];
+                                                    $totalBreakdown['accessories_charges'] += $item['accessories_charges'];
+                                                    $totalBreakdown['deposit_charges'] += $item['deposit_charges'];
+                                                    $totalBreakdown['total'] += $item['total'];
+                                                @endphp
+                                                @endforeach
+                                                <tr class="table-primary font-weight-bold">
+                                                    <td><strong>TOTAL</strong></td>
+                                                    <td class="text-end"><strong>{{ number_format($totalBreakdown['hall_charges'], 2) }}</strong></td>
+                                                    <td class="text-end"><strong>{{ number_format($totalBreakdown['accessories_charges'], 2) }}</strong></td>
+                                                    <td class="text-end"><strong>{{ number_format($totalBreakdown['deposit_charges'], 2) }}</strong></td>
+                                                    <td class="text-end"><strong>{{ number_format($totalBreakdown['total'], 2) }}</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     <!-- Gateway Response -->
                     @if($transaction->full_response)
                     <div class="row mb-4">
@@ -209,7 +262,7 @@
                                     <div class="modal-body">
                                         <div class="mb-3">
                                             <label for="refund_amount" class="form-label">Refund Amount</label>
-                                            <input type="number" class="form-control" id="refund_amount" name="refund_amount" 
+                                            <input type="number" class="form-control" id="refund_amount" name="refund_amount"
                                                    step="0.01" max="{{ $transaction->amount }}" required>
                                             <div class="form-text">Maximum refund amount: ₹{{ number_format($transaction->amount, 2) }}</div>
                                         </div>
