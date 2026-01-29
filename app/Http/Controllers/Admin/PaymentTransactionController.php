@@ -74,6 +74,7 @@ class PaymentTransactionController extends Controller
                     'item_service' => 'N/A',
                     'amount' => $transaction->amount,
                     'gst_amount' => 0.00,
+                    'total_paid' => 0,
                     'is_group_header' => false,
                     'is_group_member' => false,
                     'has_sub_rows' => false,
@@ -142,6 +143,7 @@ class PaymentTransactionController extends Controller
                             'item_service' => 'Booking Summary (' . $groupHalls->count() . ' halls)',
                             'amount' => $transaction->amount,
                             'gst_amount' => $gstAmount,
+                            'total_paid' => BookedHall::where('group_code', $bookedHall->group_code)->sum('paid_amount'),
                             'is_group_header' => true,
                             'is_group_member' => false,
                             'has_sub_rows' => !empty($groupSubItems),
@@ -162,6 +164,7 @@ class PaymentTransactionController extends Controller
                         'item_service' => $subItem['item_service'],
                         'amount' => $subItem['amount'],
                         'gst_amount' => 0.00,
+                        'total_paid' => 0,
                         'is_group_header' => false,
                         'is_group_member' => true,
                         'has_sub_rows' => false,
@@ -216,6 +219,7 @@ class PaymentTransactionController extends Controller
                     'item_service' => 'Booking Summary',
                     'amount' => $transaction->amount,
                     'gst_amount' => $gstAmount,
+                    'total_paid' => $bookedHall->paid_amount ?? 0,
                     'is_group_header' => false,
                     'is_group_member' => false,
                     'has_sub_rows' => !empty($subItems),
@@ -231,6 +235,7 @@ class PaymentTransactionController extends Controller
                         'item_service' => $subItem['item_service'],
                         'amount' => $subItem['amount'],
                         'gst_amount' => 0.00,
+                        'total_paid' => 0,
                         'is_group_header' => false,
                         'is_group_member' => false,
                         'has_sub_rows' => false,
@@ -344,6 +349,7 @@ class PaymentTransactionController extends Controller
                 'Amount (Rs.)',
                 'GST (18%)',
                 'Total with GST (Rs.)',
+                'Total Paid by User (Rs.)',
                 'Payment Type',
                 'Status',
                 'Payment Date',
@@ -356,6 +362,7 @@ class PaymentTransactionController extends Controller
 
                 if (!$bookedHall) {
                     // Fallback for missing booked hall
+                    $totalPaid = number_format(0, 2);
                     fputcsv($file, [
                         $transaction->merchant_txn_no,
                         $transaction->payphi_txn_no ?? 'N/A',
@@ -367,6 +374,7 @@ class PaymentTransactionController extends Controller
                         '0.00',
                         '0.00',
                         '0.00',
+                        $totalPaid,
                         ucfirst($transaction->transaction_type ?? 'N/A'),
                         $transaction->status,
                         $transaction->payment_date ? $transaction->payment_date->format('Y-m-d H:i:s') : 'N/A',
@@ -386,6 +394,7 @@ class PaymentTransactionController extends Controller
                     $groupTotal = 0;
                     $groupGST = 0;
                     $groupTotalWithGST = 0;
+                    $totalPaid = number_format(BookedHall::where('group_code', $bookedHall->group_code)->sum('paid_amount'), 2);
 
                     foreach ($groupHalls as $hall) {
                         $hallBreakdown = $this->calculateDetailedHallBreakdown($hall);
@@ -417,6 +426,7 @@ class PaymentTransactionController extends Controller
                                 number_format($hallBreakdown['hall_charges'], 2),
                                 number_format($hallGST, 2),
                                 number_format($hallTotalWithGST, 2),
+                                $isFirstTransaction ? $totalPaid : '',
                                 $paymentType,
                                 $status,
                                 $paymentDate,
@@ -442,6 +452,7 @@ class PaymentTransactionController extends Controller
                                 number_format($accessory['calculated_price'], 2),
                                 number_format($accessoryGST, 2),
                                 number_format($accessoryTotalWithGST, 2),
+                                $isFirstTransaction ? $totalPaid : '',
                                 $paymentType,
                                 $status,
                                 $paymentDate,
@@ -467,6 +478,7 @@ class PaymentTransactionController extends Controller
                                 number_format($hallBreakdown['deposit_charges'], 2),
                                 number_format($depositGST, 2),
                                 number_format($depositTotalWithGST, 2),
+                                $isFirstTransaction ? $totalPaid : '',
                                 $paymentType,
                                 $status,
                                 $paymentDate,
@@ -497,6 +509,7 @@ class PaymentTransactionController extends Controller
                         '',
                         '',
                         '',
+                        '',
                         ''
                     ]);
 
@@ -504,6 +517,7 @@ class PaymentTransactionController extends Controller
                     // Single hall booking
                     $hallBreakdown = $this->calculateDetailedHallBreakdown($bookedHall);
 
+                    $totalPaid = number_format($bookedHall->paid_amount ?? 0, 2);
                     $txnId = $transaction->merchant_txn_no;
                     $gatewayRef = $transaction->payphi_txn_no ?? 'N/A';
                     $customerName = $bookedHall->customer_name;
@@ -530,6 +544,7 @@ class PaymentTransactionController extends Controller
                             number_format($hallBreakdown['hall_charges'], 2),
                             number_format($hallGST, 2),
                             number_format($hallTotalWithGST, 2),
+                            $totalPaid,
                             $paymentType,
                             $status,
                             $paymentDate,
@@ -537,6 +552,7 @@ class PaymentTransactionController extends Controller
                         ]);
 
                         $txnId = $gatewayRef = $customerName = $customerEmail = $customerMobile = $paymentType = $status = $paymentDate = $createdAt = '';
+                        $totalPaid = '';
                     }
 
                     // Individual accessory rows
@@ -555,6 +571,7 @@ class PaymentTransactionController extends Controller
                             number_format($accessory['calculated_price'], 2),
                             number_format($accessoryGST, 2),
                             number_format($accessoryTotalWithGST, 2),
+                            $totalPaid,
                             $paymentType,
                             $status,
                             $paymentDate,
@@ -580,6 +597,7 @@ class PaymentTransactionController extends Controller
                             number_format($hallBreakdown['deposit_charges'], 2),
                             number_format($depositGST, 2),
                             number_format($depositTotalWithGST, 2),
+                            $totalPaid,
                             $paymentType,
                             $status,
                             $paymentDate,
